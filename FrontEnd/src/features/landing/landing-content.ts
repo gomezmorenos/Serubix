@@ -87,46 +87,85 @@ export const LANDING_CONTENT: LandingContent = {
   },
   services: {
     label: 'Servicios',
-    title: 'Todo lo que tu negocio necesita para operar de forma inteligente',
+    title: 'Dos formas de trabajar con Serubix',
     subtitle:
-      'Soluciones modulares que puedes implementar de forma progresiva según tus necesidades.',
-    cards: [
-      {
-        id: 'automation',
-        icon: '⚡',
-        title: 'Automatización de procesos',
-        description:
-          'Elimina las tareas repetitivas y construye flujos de trabajo automáticos que operan 24/7 sin intervención humana.',
-      },
-      {
-        id: 'ai-assistants',
-        icon: '🤖',
-        title: 'Asistentes con IA',
-        description:
-          'Chatbots y asistentes conversacionales entrenados con el conocimiento de tu negocio para atender clientes, captar leads y resolver consultas.',
-      },
-      {
-        id: 'integrations',
-        icon: '🔗',
-        title: 'Integración de herramientas',
-        description:
-          'Conectamos tu CRM, correo, formularios y sistemas internos para que todo fluya sin fricciones ni datos perdidos.',
-      },
-      {
-        id: 'leads',
-        icon: '🎯',
-        title: 'Gestión de leads',
-        description:
-          'Captura, clasifica y nutre tus oportunidades comerciales de forma automática. Ningún lead vuelve a caer en el olvido.',
-      },
-      {
-        id: 'commercial',
-        icon: '📈',
-        title: 'Automatización comercial',
-        description:
-          'Secuencias de seguimiento, propuestas automáticas y recordatorios inteligentes para que tu proceso de ventas funcione solo.',
-      },
-    ],
+      'Servicios personalizados para tu negocio y herramientas SaaS listas para usar desde el primer día.',
+    custom: {
+      label: 'Servicios a medida',
+      subtitle:
+        'Diseñamos e implementamos soluciones adaptadas a tus procesos, herramientas y objetivos específicos.',
+      cards: [
+        {
+          id: 'automation',
+          icon: '⚡',
+          title: 'Automatización de procesos',
+          description:
+            'Eliminamos las tareas repetitivas de tu operativa y construimos flujos automáticos que trabajan 24/7 sin intervención humana.',
+        },
+        {
+          id: 'ai-assistants',
+          icon: '🤖',
+          title: 'Asistentes conversacionales IA',
+          description:
+            'Chatbots y asistentes entrenados con el conocimiento de tu negocio para atender clientes, captar leads y resolver consultas.',
+        },
+        {
+          id: 'integrations',
+          icon: '🔗',
+          title: 'Integración de herramientas',
+          description:
+            'Conectamos tu CRM, correo, formularios y sistemas internos para que todo fluya sin fricciones ni datos perdidos.',
+        },
+        {
+          id: 'leads',
+          icon: '🎯',
+          title: 'Gestión inteligente de leads',
+          description:
+            'Capturamos, clasificamos y nutrimos tus oportunidades comerciales de forma automática. Ningún lead vuelve a perderse.',
+        },
+        {
+          id: 'commercial',
+          icon: '📈',
+          title: 'Automatización comercial',
+          description:
+            'Secuencias de seguimiento, propuestas automáticas y recordatorios inteligentes para que tu proceso de ventas funcione solo.',
+        },
+      ],
+    },
+    saas: {
+      label: 'Productos SaaS',
+      subtitle:
+        'Herramientas de inteligencia artificial listas para usar, sin configuración compleja ni infraestructura propia.',
+      products: [
+        {
+          id: 'text-to-speech',
+          icon: '🎙️',
+          title: 'Text to Speech',
+          description:
+            'Convierte cualquier texto en audio de calidad profesional con voces naturales generadas por IA. Ideal para podcasts, formación online y accesibilidad.',
+          badge: 'Disponible',
+          badgeVariant: 'available',
+        },
+        {
+          id: 'youtube-shorts',
+          icon: '🎬',
+          title: 'Generación de Shorts',
+          description:
+            'Transforma contenido largo en vídeos cortos optimizados para YouTube Shorts, TikTok e Instagram Reels de forma completamente automática.',
+          badge: 'Próximamente',
+          badgeVariant: 'soon',
+        },
+        {
+          id: 'text-to-image',
+          icon: '🖼️',
+          title: 'Text to Image',
+          description:
+            'Genera imágenes profesionales, creativos visuales y contenido gráfico a partir de una descripción de texto en segundos.',
+          badge: 'Próximamente',
+          badgeVariant: 'soon',
+        },
+      ],
+    },
   },
   process: {
     label: 'Cómo funciona',

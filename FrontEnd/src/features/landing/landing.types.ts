@@ -10,6 +10,15 @@ export interface ServiceCard {
   description: string
 }
 
+export interface SaasProduct {
+  id: string
+  icon: string
+  title: string
+  description: string
+  badge: string
+  badgeVariant: 'available' | 'beta' | 'soon'
+}
+
 export interface ProblemCard {
   id: string
   icon: string
@@ -66,7 +75,16 @@ export interface LandingContent {
     label: string
     title: string
     subtitle: string
-    cards: ServiceCard[]
+    custom: {
+      label: string
+      subtitle: string
+      cards: ServiceCard[]
+    }
+    saas: {
+      label: string
+      subtitle: string
+      products: SaasProduct[]
+    }
   }
   process: {
     label: string

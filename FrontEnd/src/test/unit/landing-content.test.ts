@@ -80,22 +80,60 @@ describe('LANDING_CONTENT — integridad de datos', () => {
   })
 
   describe('services', () => {
-    it('tiene al menos un servicio', () => {
-      expect(LANDING_CONTENT.services.cards.length).toBeGreaterThan(0)
+    it('tiene título, subtítulo y label', () => {
+      const { label, title, subtitle } = LANDING_CONTENT.services
+      expect(label).toBeTruthy()
+      expect(title).toBeTruthy()
+      expect(subtitle).toBeTruthy()
     })
 
-    it('cada servicio tiene id, icon, title y description', () => {
-      LANDING_CONTENT.services.cards.forEach((card) => {
-        expect(card.id).toBeTruthy()
-        expect(card.icon).toBeTruthy()
-        expect(card.title).toBeTruthy()
-        expect(card.description).toBeTruthy()
+    describe('custom', () => {
+      it('tiene al menos un servicio a medida', () => {
+        expect(LANDING_CONTENT.services.custom.cards.length).toBeGreaterThan(0)
+      })
+
+      it('cada servicio tiene id, icon, title y description', () => {
+        LANDING_CONTENT.services.custom.cards.forEach((card) => {
+          expect(card.id).toBeTruthy()
+          expect(card.icon).toBeTruthy()
+          expect(card.title).toBeTruthy()
+          expect(card.description).toBeTruthy()
+        })
+      })
+
+      it('los ids de los servicios a medida son únicos', () => {
+        const ids = LANDING_CONTENT.services.custom.cards.map((c) => c.id)
+        expect(new Set(ids).size).toBe(ids.length)
       })
     })
 
-    it('los ids de los servicios son únicos', () => {
-      const ids = LANDING_CONTENT.services.cards.map((c) => c.id)
-      expect(new Set(ids).size).toBe(ids.length)
+    describe('saas', () => {
+      it('tiene al menos un producto SaaS', () => {
+        expect(LANDING_CONTENT.services.saas.products.length).toBeGreaterThan(0)
+      })
+
+      it('cada producto SaaS tiene id, icon, title, description, badge y badgeVariant', () => {
+        LANDING_CONTENT.services.saas.products.forEach((product) => {
+          expect(product.id).toBeTruthy()
+          expect(product.icon).toBeTruthy()
+          expect(product.title).toBeTruthy()
+          expect(product.description).toBeTruthy()
+          expect(product.badge).toBeTruthy()
+          expect(['available', 'beta', 'soon']).toContain(product.badgeVariant)
+        })
+      })
+
+      it('los ids de los productos SaaS son únicos', () => {
+        const ids = LANDING_CONTENT.services.saas.products.map((p) => p.id)
+        expect(new Set(ids).size).toBe(ids.length)
+      })
+
+      it('todos los ids son únicos entre servicios a medida y SaaS', () => {
+        const customIds = LANDING_CONTENT.services.custom.cards.map((c) => c.id)
+        const saasIds = LANDING_CONTENT.services.saas.products.map((p) => p.id)
+        const allIds = [...customIds, ...saasIds]
+        expect(new Set(allIds).size).toBe(allIds.length)
+      })
     })
   })
 
