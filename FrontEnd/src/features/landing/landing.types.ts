@@ -90,6 +90,7 @@ export interface LandingContent {
     subtitle: string
     primaryCTA: string
     note: string
+    contact: string
   }
   footer: {
     brand: string

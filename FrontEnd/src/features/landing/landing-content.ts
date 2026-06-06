@@ -220,6 +220,7 @@ export const LANDING_CONTENT: LandingContent = {
       'Solicita un diagnóstico gratuito y descubre exactamente qué procesos puedes automatizar esta semana.',
     primaryCTA: 'Solicitar diagnóstico gratuito',
     note: 'Sin compromisos. Sin coste. Solo resultados.',
+    contact: 'hola@serubix.com',
   },
   footer: {
     brand: 'Serubix',

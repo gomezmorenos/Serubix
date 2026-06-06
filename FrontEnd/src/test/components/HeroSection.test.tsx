@@ -16,6 +16,11 @@ describe('HeroSection', () => {
     expect(screen.getByText(hero.subtitle)).toBeInTheDocument()
   })
 
+  it('renderiza el badge', () => {
+    render(<HeroSection {...hero} />)
+    expect(screen.getByText(hero.badge)).toBeInTheDocument()
+  })
+
   it('renderiza el CTA principal apuntando a #contacto', () => {
     render(<HeroSection {...hero} />)
     const link = screen.getByRole('link', { name: hero.primaryCTA })
@@ -35,8 +40,13 @@ describe('HeroSection', () => {
     expect(screen.getByText(hero.trustNote)).toBeInTheDocument()
   })
 
-  it('renderiza el badge con el texto correcto', () => {
+  it('la sección tiene aria-labelledby apuntando al h1', () => {
     render(<HeroSection {...hero} />)
-    expect(screen.getByText(hero.badge)).toBeInTheDocument()
+    expect(document.querySelector('section[aria-labelledby="hero-title"]')).toBeInTheDocument()
+  })
+
+  it('el h1 tiene el id hero-title', () => {
+    render(<HeroSection {...hero} />)
+    expect(document.getElementById('hero-title')).toBeInTheDocument()
   })
 })

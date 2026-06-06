@@ -55,7 +55,7 @@ function WindowBar() {
       <div className="w-3 h-3 rounded-full bg-yellow-500/60" aria-hidden="true" />
       <div className="w-3 h-3 rounded-full bg-green-500/60" aria-hidden="true" />
       <div className="ml-4 flex-1 bg-zinc-800 rounded-md px-3 py-1 text-zinc-500 text-xs">
-        app.automatizaia.com/dashboard
+        app.serubix.com/dashboard
       </div>
     </div>
   )

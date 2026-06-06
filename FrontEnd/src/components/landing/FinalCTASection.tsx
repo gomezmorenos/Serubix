@@ -2,7 +2,7 @@ import type { LandingContent } from '@/features/landing/landing.types'
 
 type FinalCTASectionProps = LandingContent['finalCTA']
 
-export function FinalCTASection({ title, subtitle, primaryCTA, note }: FinalCTASectionProps) {
+export function FinalCTASection({ title, subtitle, primaryCTA, note, contact }: Readonly<FinalCTASectionProps>) {
   return (
     <section id="contacto" className="py-24 bg-zinc-950" aria-labelledby="cta-title">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -20,7 +20,7 @@ export function FinalCTASection({ title, subtitle, primaryCTA, note }: FinalCTAS
             </h2>
             <p className="text-zinc-400 text-lg mb-10 max-w-2xl mx-auto">{subtitle}</p>
             <a
-              href="mailto:hola@automatizaia.com"
+              href={`mailto:${contact}`}
               className="inline-block bg-blue-600 hover:bg-blue-500 text-white font-semibold px-10 py-4 rounded-xl transition-all hover:shadow-xl hover:shadow-blue-600/25 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-900 text-lg"
             >
               {primaryCTA}
