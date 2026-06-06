@@ -10,10 +10,9 @@ export default defineConfig({
     globals: true,
     coverage: {
       provider: 'v8',
+      include: ['src/**'],
       exclude: [
-        'next.config.ts',
-        'postcss.config.mjs',
-        'tailwind.config.ts',
+        'src/test/**',
         'src/features/landing/landing.types.ts',
       ],
     },
