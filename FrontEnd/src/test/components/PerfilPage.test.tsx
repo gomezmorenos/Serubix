@@ -71,3 +71,38 @@ describe('PerfilPage', () => {
     expect(form).toHaveAttribute('data-email', 'test@serubix.com')
   })
 })
+
+describe('PerfilPage - usuario sin nombre', () => {
+  it('usa la inicial del email cuando el usuario no tiene nombre', async () => {
+    const { auth } = await import('@/lib/auth')
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: '2', name: null, email: 'noname@serubix.com', image: null },
+      expires: '',
+    })
+    const element = await PerfilPage()
+    render(element)
+    expect(screen.getByText('N')).toBeInTheDocument()
+  })
+
+  it('muestra "Usuario" cuando el usuario no tiene nombre', async () => {
+    const { auth } = await import('@/lib/auth')
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: '2', name: null, email: 'noname@serubix.com', image: null },
+      expires: '',
+    })
+    const element = await PerfilPage()
+    render(element)
+    expect(screen.getByText('Usuario')).toBeInTheDocument()
+  })
+
+  it('usa "U" como inicial cuando el usuario no tiene nombre ni email', async () => {
+    const { auth } = await import('@/lib/auth')
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: '3', name: null, email: null, image: null },
+      expires: '',
+    })
+    const element = await PerfilPage()
+    render(element)
+    expect(screen.getByText('U')).toBeInTheDocument()
+  })
+})

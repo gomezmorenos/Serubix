@@ -93,4 +93,10 @@ describe('Sidebar', () => {
     await user.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
     expect(mockSignOut).toHaveBeenCalledWith({ callbackUrl: '/' })
   })
+
+  it('muestra "U" y "Usuario" cuando el usuario no tiene nombre ni email', () => {
+    render(<Sidebar user={{ name: null, email: null, image: null }} />)
+    expect(screen.getByText('U')).toBeInTheDocument()
+    expect(screen.getByText('Usuario')).toBeInTheDocument()
+  })
 })

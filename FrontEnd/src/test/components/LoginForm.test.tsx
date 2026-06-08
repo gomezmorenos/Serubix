@@ -89,4 +89,14 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
     expect(screen.getByRole('button', { name: 'Iniciando sesión...' })).toBeDisabled()
   })
+
+  it('muestra error genérico cuando signIn lanza una excepción', async () => {
+    mockSignIn.mockRejectedValueOnce(new Error('Network error'))
+    const user = userEvent.setup()
+    render(<LoginForm callbackUrl="/dashboard" />)
+    await user.type(screen.getByLabelText('Email'), 'test@test.com')
+    await user.type(screen.getByLabelText('Contraseña'), 'pass123')
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ha ocurrido un error')
+  })
 })
