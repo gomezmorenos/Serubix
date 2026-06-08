@@ -80,13 +80,13 @@ describe('ttsService.generate', () => {
     expect(mockSpeechCreate).toHaveBeenCalled()
   })
 
-  it('usa "alloy" como voz por defecto si voice es undefined', async () => {
+  it('pasa la voz indicada a la API de OpenAI', async () => {
     mockFindUnique.mockResolvedValue({ planId: 'pro', plan: proPlan })
     const fakeBuffer = Buffer.from('audio_data')
     mockSpeechCreate.mockResolvedValue({ arrayBuffer: () => Promise.resolve(fakeBuffer.buffer) })
     mockUsageCreate.mockResolvedValue({})
 
-    await ttsService.generate('user-1', { text: 'hola', voice: undefined })
+    await ttsService.generate('user-1', { text: 'hola', voice: 'alloy' })
 
     expect(mockSpeechCreate).toHaveBeenCalledWith(
       expect.objectContaining({ voice: 'alloy' }),
