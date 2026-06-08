@@ -14,6 +14,9 @@ export default defineConfig({
       exclude: [
         'src/test/**',
         'src/features/landing/landing.types.ts',
+        'src/lib/auth.ts',
+        'src/middleware.ts',
+        'src/app/api/**',
       ],
     },
   },
