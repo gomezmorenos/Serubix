@@ -5,6 +5,31 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { GoogleButton } from './GoogleButton'
 
+async function registerWithApi(apiUrl: string, payload: { name: string; email: string; password: string }) {
+  let res: Response
+  try {
+    res = await fetch(`${apiUrl}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    throw new Error('No se puede conectar con el servidor. Comprueba que el backend está en marcha.')
+  }
+
+  if (res.ok) return
+
+  const data = await res.json().catch(() => ({}))
+  if (res.status === 409) {
+    throw new Error('Este email ya tiene una cuenta registrada. Inicia sesión o usa otro email.')
+  }
+  if (res.status === 400 && data.details) {
+    const firstMsg = Object.values(data.details as Record<string, string[]>).flat()[0]
+    throw new Error(firstMsg ?? 'Algún campo no es válido. Revisa el formulario.')
+  }
+  throw new Error(data.error ?? 'Error al crear la cuenta. Inténtalo de nuevo.')
+}
+
 export function RegisterForm() {
   const router = useRouter()
   const [name, setName] = useState('')
@@ -14,7 +39,7 @@ export function RegisterForm() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault()
     setError('')
 
@@ -31,15 +56,7 @@ export function RegisterForm() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL
       if (apiUrl) {
-        const res = await fetch(`${apiUrl}/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name.trim(), email, password }),
-        })
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          throw new Error(data.error ?? 'Error al crear la cuenta')
-        }
+        await registerWithApi(apiUrl, { name: name.trim(), email, password })
       } else {
         await new Promise((r) => setTimeout(r, 600))
       }

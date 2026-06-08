@@ -13,7 +13,7 @@ export function ProfileForm({ name, email }: Readonly<ProfileFormProps>) {
   const [displayName, setDisplayName] = useState(name ?? '')
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault()
     setStatus('saving')
 
