@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 
 interface ProfileFormProps {
   name: string | null | undefined
@@ -8,23 +9,35 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ name, email }: Readonly<ProfileFormProps>) {
+  const { data: session } = useSession()
   const [displayName, setDisplayName] = useState(name ?? '')
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setStatus('saving')
 
-    // TODO: call backend API when ready
-    // await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me`, {
-    //   method: 'PATCH',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ name: displayName }),
-    // })
-
-    await new Promise((r) => setTimeout(r, 700))
-    setStatus('saved')
-    setTimeout(() => setStatus('idle'), 3000)
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      if (apiUrl && session?.backendToken) {
+        const res = await fetch(`${apiUrl}/users/me`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.backendToken}`,
+          },
+          body: JSON.stringify({ name: displayName }),
+        })
+        if (!res.ok) throw new Error('Error al guardar el perfil')
+      } else {
+        await new Promise((r) => setTimeout(r, 700))
+      }
+      setStatus('saved')
+      setTimeout(() => setStatus('idle'), 3000)
+    } catch {
+      setStatus('error')
+      setTimeout(() => setStatus('idle'), 3000)
+    }
   }
 
   return (
@@ -68,6 +81,9 @@ export function ProfileForm({ name, email }: Readonly<ProfileFormProps>) {
         </button>
         {status === 'saved' && (
           <span className="text-emerald-400 text-sm">Cambios guardados correctamente.</span>
+        )}
+        {status === 'error' && (
+          <span className="text-red-400 text-sm">No se pudo guardar. Inténtalo de nuevo.</span>
         )}
       </div>
     </form>

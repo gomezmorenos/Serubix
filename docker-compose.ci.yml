@@ -1,0 +1,58 @@
+# docker-compose.ci.yml — stack de integración para CI y pruebas locales
+#
+# Uso local:
+#   docker compose -f docker-compose.ci.yml --env-file env.ci up --build -d
+#   docker compose -f docker-compose.ci.yml --env-file env.ci down -v
+#
+# En GitHub Actions el workflow inyecta CI_* como variables de entorno del job.
+# Los puertos son distintos (3001/4001/5433) para no chocar con el entorno local.
+
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ${CI_DB_USER}
+      POSTGRES_PASSWORD: ${CI_DB_PASSWORD}
+      POSTGRES_DB: ${CI_DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CI_DB_USER}"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  backend:
+    build:
+      context: ./Backend
+      target: builder       # stage con todo: deps, tsconfig, dist, prisma
+    ports:
+      - "4001:4000"
+    environment:
+      NODE_ENV: test
+      PORT: 4000
+      DATABASE_URL: postgresql://${CI_DB_USER}:${CI_DB_PASSWORD}@db:5432/${CI_DB_NAME}
+      JWT_SECRET: ${CI_JWT_SECRET}
+      OPENAI_API_KEY: ""    # TTS desactivado en CI (sin clave real)
+      FRONTEND_URL: http://localhost:3001
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        npm run db:seed &&
+        node dist/index.js
+      "
+
+  frontend:
+    build:
+      context: ./FrontEnd
+    ports:
+      - "3001:3000"
+    environment:
+      NODE_ENV: test
+      NEXT_PUBLIC_API_URL: http://backend:4000
+      AUTH_SECRET: ${CI_AUTH_SECRET}
+    depends_on:
+      - backend

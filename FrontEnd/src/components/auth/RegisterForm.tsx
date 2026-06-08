@@ -29,18 +29,23 @@ export function RegisterForm() {
 
     setIsLoading(true)
     try {
-      // TODO: call backend API when ready
-      // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ name, email, password }),
-      // })
-      // if (!res.ok) throw new Error()
-
-      await new Promise((r) => setTimeout(r, 600))
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      if (apiUrl) {
+        const res = await fetch(`${apiUrl}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name.trim(), email, password }),
+        })
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          throw new Error(data.error ?? 'Error al crear la cuenta')
+        }
+      } else {
+        await new Promise((r) => setTimeout(r, 600))
+      }
       router.push('/login?registered=true')
-    } catch {
-      setError('No se ha podido crear la cuenta. Inténtalo de nuevo.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se ha podido crear la cuenta. Inténtalo de nuevo.')
     } finally {
       setIsLoading(false)
     }

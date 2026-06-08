@@ -1,13 +1,17 @@
 services:
-  frontend:
-    build:
-      context: ./FrontEnd
-    ports:
-      - "3000:3000"
+  db:
+    image: postgres:16-alpine
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost/api
-    env_file:
-      - .env
+      POSTGRES_USER: ${POSTGRES_USER:-serubix}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-serubix}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-serubix}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   backend:
@@ -15,8 +19,27 @@ services:
       context: ./Backend
     ports:
       - "4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-serubix}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-serubix}
+      - FRONTEND_URL=http://localhost:3000
     env_file:
       - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./FrontEnd
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+    env_file:
+      - .env
+    depends_on:
+      - backend
     restart: unless-stopped
 
   nginx:
@@ -29,3 +52,6 @@ services:
       - frontend
       - backend
     restart: unless-stopped
+
+volumes:
+  postgres_data:

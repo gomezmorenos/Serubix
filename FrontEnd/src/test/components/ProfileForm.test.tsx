@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect } from 'vitest'
+import { vi, describe, it, expect } from 'vitest'
 import { ProfileForm } from '@/components/dashboard/ProfileForm'
+
+vi.mock('next-auth/react', () => ({
+  useSession: vi.fn().mockReturnValue({ data: null }),
+}))
 
 describe('ProfileForm', () => {
   it('renderiza el campo de nombre con el valor del usuario', () => {
