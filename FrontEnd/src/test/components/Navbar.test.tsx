@@ -35,9 +35,9 @@ describe('Navbar', () => {
     expect(screen.getByRole('link', { name: nav.cta })).toBeInTheDocument()
   })
 
-  it('el CTA apunta a #contacto', () => {
+  it('el CTA apunta a la ruta configurada', () => {
     render(<Navbar {...nav} />)
-    expect(screen.getByRole('link', { name: nav.cta })).toHaveAttribute('href', '#contacto')
+    expect(screen.getByRole('link', { name: nav.cta })).toHaveAttribute('href', nav.ctaHref)
   })
 
   it('tiene rol de navegación principal accesible', () => {

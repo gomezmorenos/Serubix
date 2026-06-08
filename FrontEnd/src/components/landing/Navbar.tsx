@@ -1,15 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import type { NavItem } from '@/features/landing/landing.types'
 
 interface NavbarProps {
   brand: string
   items: NavItem[]
   cta: string
+  ctaHref: string
 }
 
-export function Navbar({ brand, items, cta }: NavbarProps) {
+export function Navbar({ brand, items, cta, ctaHref }: Readonly<NavbarProps>) {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -51,12 +53,12 @@ export function Navbar({ brand, items, cta }: NavbarProps) {
           ))}
         </ul>
 
-        <a
-          href="#contacto"
+        <Link
+          href={ctaHref}
           className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-zinc-950"
         >
           {cta}
-        </a>
+        </Link>
       </nav>
     </header>
   )

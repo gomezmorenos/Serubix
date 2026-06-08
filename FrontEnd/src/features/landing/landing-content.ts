@@ -9,7 +9,8 @@ export const LANDING_CONTENT: LandingContent = {
       { label: 'Beneficios', href: '#beneficios' },
       { label: 'Contacto', href: '#contacto' },
     ],
-    cta: 'Solicitar diagnóstico',
+    cta: 'Área de clientes',
+    ctaHref: '/login',
   },
   hero: {
     badge: 'Plataforma de Automatización con IA',

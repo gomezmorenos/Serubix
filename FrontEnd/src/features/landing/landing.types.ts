@@ -50,6 +50,7 @@ export interface LandingContent {
     brand: string
     items: NavItem[]
     cta: string
+    ctaHref: string
   }
   hero: {
     badge: string
