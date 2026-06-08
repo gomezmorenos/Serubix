@@ -1,12 +1,15 @@
 import { render, screen } from '@testing-library/react'
 import { vi, describe, it, expect } from 'vitest'
 import DashboardPage from '@/app/(dashboard)/dashboard/page'
+import { auth } from '@/lib/auth'
 
 vi.mock('@/lib/auth', () => ({
   auth: vi.fn().mockResolvedValue({
     user: { id: '1', name: 'Test User', email: 'test@serubix.com', image: null },
   }),
 }))
+
+const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 
 describe('DashboardPage', () => {
   it('muestra saludo con el primer nombre del usuario', async () => {
@@ -50,8 +53,7 @@ describe('DashboardPage', () => {
   })
 
   it('muestra "Usuario" cuando el nombre de sesión es nulo', async () => {
-    const { auth } = await import('@/lib/auth')
-    vi.mocked(auth).mockResolvedValueOnce({
+    mockAuth.mockResolvedValueOnce({
       user: { id: '1', name: null, email: 'test@test.com', image: null },
       expires: '',
     })

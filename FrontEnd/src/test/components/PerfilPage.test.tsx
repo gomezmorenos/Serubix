@@ -1,12 +1,16 @@
 import { render, screen } from '@testing-library/react'
 import { vi, describe, it, expect } from 'vitest'
 import PerfilPage from '@/app/(dashboard)/perfil/page'
+import { auth } from '@/lib/auth'
 
 vi.mock('@/lib/auth', () => ({
   auth: vi.fn().mockResolvedValue({
     user: { id: '1', name: 'Test User', email: 'test@serubix.com', image: null },
   }),
 }))
+
+// auth en Auth.js v5 tiene tipo NextAuth (overload de NextMiddleware), hay que hacer cast
+const mockAuth = auth as unknown as ReturnType<typeof vi.fn>
 
 vi.mock('@/components/dashboard/ProfileForm', () => ({
   ProfileForm: ({ name, email }: { name: string; email: string }) => (
@@ -74,8 +78,7 @@ describe('PerfilPage', () => {
 
 describe('PerfilPage - usuario sin nombre', () => {
   it('usa la inicial del email cuando el usuario no tiene nombre', async () => {
-    const { auth } = await import('@/lib/auth')
-    vi.mocked(auth).mockResolvedValueOnce({
+    mockAuth.mockResolvedValueOnce({
       user: { id: '2', name: null, email: 'noname@serubix.com', image: null },
       expires: '',
     })
@@ -85,8 +88,7 @@ describe('PerfilPage - usuario sin nombre', () => {
   })
 
   it('muestra "Usuario" cuando el usuario no tiene nombre', async () => {
-    const { auth } = await import('@/lib/auth')
-    vi.mocked(auth).mockResolvedValueOnce({
+    mockAuth.mockResolvedValueOnce({
       user: { id: '2', name: null, email: 'noname@serubix.com', image: null },
       expires: '',
     })
@@ -96,8 +98,7 @@ describe('PerfilPage - usuario sin nombre', () => {
   })
 
   it('usa "U" como inicial cuando el usuario no tiene nombre ni email', async () => {
-    const { auth } = await import('@/lib/auth')
-    vi.mocked(auth).mockResolvedValueOnce({
+    mockAuth.mockResolvedValueOnce({
       user: { id: '3', name: null, email: null, image: null },
       expires: '',
     })
