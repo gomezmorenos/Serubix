@@ -15,8 +15,9 @@ model User {
   provider     String   @default("credentials")
   planId       String   @default("free")
   plan         Plan     @relation(fields: [planId], references: [id])
-  usages       Usage[]
-  createdAt    DateTime @default(now())
+  usages           Usage[]
+  generatedContent GeneratedContent[]
+  createdAt        DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@map("users")
@@ -42,4 +43,18 @@ model Usage {
 
   @@index([userId, tool, month])
   @@map("usages")
+}
+
+model GeneratedContent {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tool      String
+  label     String
+  status    String   @default("pending")
+  filename  String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("generated_content")
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { TtsWidget } from '@/components/dashboard/TtsWidget'
 
 export const metadata: Metadata = {
   title: 'Herramientas | Serubix',
@@ -79,7 +80,7 @@ export default function HerramientasPage() {
                 </p>
 
                 {tool.available ? (
-                  <TextToSpeechWidget />
+                  <TtsWidget />
                 ) : (
                   <div className="flex items-center gap-3 py-3 px-4 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
                     <ClockIcon />
@@ -103,49 +104,7 @@ export default function HerramientasPage() {
   )
 }
 
-function TextToSpeechWidget() {
-  return (
-    <div className="space-y-4">
-      <div>
-        <label
-          htmlFor="tts-text"
-          className="block text-sm font-medium text-zinc-300 mb-1.5"
-        >
-          Texto a convertir
-        </label>
-        <textarea
-          id="tts-text"
-          rows={4}
-          placeholder="Escribe o pega aquí el texto que quieres convertir a voz..."
-          className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-sm"
-          readOnly
-        />
-      </div>
-      <div className="flex items-center gap-3">
-        <div>
-          <label htmlFor="tts-voice" className="sr-only">Voz</label>
-          <select
-            id="tts-voice"
-            disabled
-            className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-300 text-sm focus:outline-none disabled:opacity-60"
-          >
-            <option>Voz: Natural (ES)</option>
-          </select>
-        </div>
-        <button
-          disabled
-          className="px-5 py-2 bg-blue-600/50 text-blue-200 rounded-lg text-sm font-medium cursor-not-allowed flex items-center gap-2"
-        >
-          <MicIcon small />
-          Generar audio
-        </button>
-        <span className="text-zinc-500 text-xs">Integración con backend en desarrollo</span>
-      </div>
-    </div>
-  )
-}
-
-function MicIcon({ small = false }: { small?: boolean }) {
+function MicIcon({ small = false }: Readonly<{ small?: boolean }>) {
   const size = small ? 14 : 22
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

@@ -3,12 +3,20 @@ import request from 'supertest'
 import { app } from '../../app'
 import { AppError } from '../../lib/errors'
 
-const mockGenerate = vi.hoisted(() => vi.fn())
+const mockStartGeneration = vi.hoisted(() => vi.fn())
+const mockGetRecent = vi.hoisted(() => vi.fn())
+const mockGetById = vi.hoisted(() => vi.fn())
 const mockVerifyToken = vi.hoisted(() => vi.fn())
 
 vi.mock('../../services/tts.service', () => ({
-  ttsService: {
-    generate: mockGenerate,
+  ttsService: { startGeneration: mockStartGeneration },
+  STORAGE_DIR: '/app/storage',
+}))
+
+vi.mock('../../services/content.service', () => ({
+  contentService: {
+    getRecent: mockGetRecent,
+    getById: mockGetById,
   },
 }))
 
@@ -37,21 +45,20 @@ describe('POST /tools/tts', () => {
     expect(res.status).toBe(400)
   })
 
-  it('devuelve audio mp3 con petición válida', async () => {
-    const audioBuffer = Buffer.from('fake-audio-data')
-    mockGenerate.mockResolvedValue(audioBuffer)
+  it('devuelve 202 con el id del contenido pendiente', async () => {
+    mockStartGeneration.mockResolvedValue('content-abc')
 
     const res = await request(app)
       .post('/tools/tts')
       .set('Authorization', authHeader())
       .send({ text: 'Hola mundo', voice: 'alloy' })
 
-    expect(res.status).toBe(200)
-    expect(res.headers['content-type']).toContain('audio/mpeg')
+    expect(res.status).toBe(202)
+    expect(res.body.id).toBe('content-abc')
   })
 
   it('devuelve 402 si el límite del plan ha sido alcanzado', async () => {
-    mockGenerate.mockRejectedValue(new AppError('Límite mensual alcanzado', 402))
+    mockStartGeneration.mockRejectedValue(new AppError('Límite mensual alcanzado', 402))
 
     const res = await request(app)
       .post('/tools/tts')
@@ -62,7 +69,7 @@ describe('POST /tools/tts', () => {
   })
 
   it('devuelve 503 si la API key de OpenAI no está configurada', async () => {
-    mockGenerate.mockRejectedValue(new AppError('El servicio TTS no está configurado', 503))
+    mockStartGeneration.mockRejectedValue(new AppError('El servicio TTS no está configurado', 503))
 
     const res = await request(app)
       .post('/tools/tts')
@@ -70,5 +77,55 @@ describe('POST /tools/tts', () => {
       .send({ text: 'Hola', voice: 'alloy' })
 
     expect(res.status).toBe(503)
+  })
+})
+
+describe('GET /tools/content', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('devuelve 401 sin autenticación', async () => {
+    const res = await request(app).get('/tools/content')
+    expect(res.status).toBe(401)
+  })
+
+  it('devuelve la lista de contenido generado', async () => {
+    const items = [
+      { id: 'c1', tool: 'tts', label: 'Hola mundo', status: 'done', filename: 'c1.mp3', createdAt: new Date().toISOString() },
+    ]
+    mockGetRecent.mockResolvedValue(items)
+
+    const res = await request(app).get('/tools/content').set('Authorization', authHeader())
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual(items)
+  })
+})
+
+describe('GET /tools/content/:id/download', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('devuelve 401 sin autenticación', async () => {
+    const res = await request(app).get('/tools/content/c1/download')
+    expect(res.status).toBe(401)
+  })
+
+  it('devuelve 409 si el contenido aún está pendiente', async () => {
+    mockGetById.mockResolvedValue({ id: 'c1', status: 'pending', filename: null })
+
+    const res = await request(app)
+      .get('/tools/content/c1/download')
+      .set('Authorization', authHeader())
+
+    expect(res.status).toBe(409)
+  })
+
+  it('devuelve 404 si el contenido no existe', async () => {
+    mockGetById.mockRejectedValue(new AppError('Contenido no encontrado', 404))
+
+    const res = await request(app)
+      .get('/tools/content/unknown/download')
+      .set('Authorization', authHeader())
+
+    expect(res.status).toBe(404)
   })
 })
