@@ -24,6 +24,8 @@ services:
       - FRONTEND_URL=http://localhost:3000
     env_file:
       - .env
+    volumes:
+      - tts_storage:/app/storage
     depends_on:
       db:
         condition: service_healthy
@@ -55,3 +57,4 @@ services:
 
 volumes:
   postgres_data:
+  tts_storage:

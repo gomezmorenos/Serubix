@@ -26,6 +26,8 @@ services:
       - FRONTEND_URL=https://${DOMAIN}
     env_file:
       - .env
+    volumes:
+      - tts_storage:/app/storage
     depends_on:
       db:
         condition: service_healthy
@@ -68,3 +70,4 @@ networks:
 
 volumes:
   postgres_data:
+  tts_storage:
