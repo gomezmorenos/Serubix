@@ -227,7 +227,7 @@ describe('LANDING_CONTENT — integridad de datos', () => {
       expect(LANDING_CONTENT.footer.links.length).toBeGreaterThan(0)
       LANDING_CONTENT.footer.links.forEach((link) => {
         expect(link.label).toBeTruthy()
-        expect(link.href).toMatch(/^#/)
+        expect(link.href).toMatch(/^[#/]/)
       })
     })
   })

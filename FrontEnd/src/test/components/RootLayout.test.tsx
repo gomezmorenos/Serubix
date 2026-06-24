@@ -6,6 +6,14 @@ vi.mock('next/font/google', () => ({
   Geist_Mono: () => ({ variable: '--font-geist-mono', className: 'mock-geist-mono' }),
 }))
 
+vi.mock('@/components/Providers', () => ({
+  Providers: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
+
+vi.mock('@/components/landing/CookieBanner', () => ({
+  CookieBanner: () => null,
+}))
+
 import RootLayout from '@/app/layout'
 
 describe('RootLayout', () => {

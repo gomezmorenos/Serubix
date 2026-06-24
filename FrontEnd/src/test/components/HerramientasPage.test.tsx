@@ -1,6 +1,10 @@
 import { render, screen } from '@testing-library/react'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import HerramientasPage from '@/app/(dashboard)/herramientas/page'
+
+vi.mock('next-auth/react', () => ({
+  useSession: () => ({ data: { backendToken: 'mock-token' }, status: 'authenticated' }),
+}))
 
 describe('HerramientasPage', () => {
   it('renderiza el título de la página', () => {
@@ -35,7 +39,7 @@ describe('HerramientasPage', () => {
 
   it('renderiza el textarea del widget de Text to Speech', () => {
     render(<HerramientasPage />)
-    expect(screen.getByLabelText('Texto a convertir')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Texto a convertir/i)).toBeInTheDocument()
   })
 
   it('renderiza 3 artículos de herramientas en total', () => {

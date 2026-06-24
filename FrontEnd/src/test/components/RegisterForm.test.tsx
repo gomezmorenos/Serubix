@@ -133,4 +133,48 @@ describe('RegisterForm - con NEXT_PUBLIC_API_URL', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('El email ya está registrado')
     expect(mockPush).not.toHaveBeenCalled()
   })
+
+  it('muestra mensaje específico para email duplicado (409)', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: () => Promise.resolve({}),
+    })
+    const user = userEvent.setup()
+    render(<RegisterForm />)
+    await user.type(screen.getByLabelText('Nombre'), 'Test User')
+    await user.type(screen.getByLabelText('Email'), 'dup@test.com')
+    await user.type(screen.getByLabelText('Contraseña'), 'password123')
+    await user.type(screen.getByLabelText('Confirmar contraseña'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('ya tiene una cuenta')
+  })
+
+  it('muestra el primer error de validación cuando la API devuelve 400 con details', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: () => Promise.resolve({ details: { email: ['Email inválido'] } }),
+    })
+    const user = userEvent.setup()
+    render(<RegisterForm />)
+    await user.type(screen.getByLabelText('Nombre'), 'Test User')
+    await user.type(screen.getByLabelText('Email'), 'bad')
+    await user.type(screen.getByLabelText('Contraseña'), 'password123')
+    await user.type(screen.getByLabelText('Confirmar contraseña'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Email inválido')
+  })
+
+  it('muestra error de red si fetch lanza excepción', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'))
+    const user = userEvent.setup()
+    render(<RegisterForm />)
+    await user.type(screen.getByLabelText('Nombre'), 'Test User')
+    await user.type(screen.getByLabelText('Email'), 'test@test.com')
+    await user.type(screen.getByLabelText('Contraseña'), 'password123')
+    await user.type(screen.getByLabelText('Confirmar contraseña'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('No se puede conectar')
+  })
 })

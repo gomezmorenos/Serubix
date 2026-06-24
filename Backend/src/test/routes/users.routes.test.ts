@@ -97,4 +97,23 @@ describe('GET /users/me/usage', () => {
     expect(res.status).toBe(200)
     expect(res.body).toEqual([{ tool: 'tts', amount: 1500 }])
   })
+
+  it('devuelve 500 si el servicio falla', async () => {
+    mockGetUsage.mockRejectedValue(new Error('DB error'))
+    const res = await request(app).get('/users/me/usage').set('Authorization', authHeader())
+    expect(res.status).toBe(500)
+  })
+})
+
+describe('PATCH /users/me — error de servicio', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('devuelve 500 si el servicio falla', async () => {
+    mockUpdateProfile.mockRejectedValue(new Error('DB error'))
+    const res = await request(app)
+      .patch('/users/me')
+      .set('Authorization', authHeader())
+      .send({ name: 'Test' })
+    expect(res.status).toBe(500)
+  })
 })
