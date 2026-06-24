@@ -270,6 +270,7 @@ export const LANDING_CONTENT: LandingContent = {
       { label: 'Cómo funciona', href: '#como-funciona' },
       { label: 'Beneficios', href: '#beneficios' },
       { label: 'Contacto', href: '#contacto' },
+      { label: 'Política de Cookies', href: '/politica-de-cookies' },
     ],
     contact: 'hola@serubix.com',
     copyright: `© ${new Date().getFullYear()} Serubix. Todos los derechos reservados.`,
