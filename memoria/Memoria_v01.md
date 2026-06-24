@@ -395,7 +395,108 @@ El proyecto busca demostrar competencias en:
 
 ---
 
-# 18. Roadmap Inicial
+# 18. Buenas prácticas implementadas
+
+Esta sección recoge las buenas prácticas de ingeniería aplicadas en el proyecto, organizadas por ámbito, como evidencia de su aplicación real en el código.
+
+---
+
+## 18.1 Arquitectura — Clean Architecture
+
+El proyecto aplica separación estricta por capas en ambas partes del sistema.
+
+**Backend:** las rutas (`routes/`) solo reciben la petición HTTP y llaman al servicio. Los servicios (`services/`) contienen la lógica de negocio sin conocer HTTP. La infraestructura (`lib/`) agrupa clientes de base de datos, JWT y errores.
+
+**Frontend:** los componentes de presentación (`components/`) reciben datos como props. Las features (`features/landing/`) centralizan el contenido. Los tipos (`types/`) no tienen dependencias.
+
+---
+
+## 18.2 Principios SOLID
+
+| Principio | Evidencia en el código |
+|---|---|
+| **S** — Single Responsibility | `asyncHandler`, `requireAuth`, `validate`, `errorMiddleware`, `useContentItems`, `useTtsGenerate` — cada módulo tiene una sola responsabilidad |
+| **O** — Open/Closed | Añadir un nuevo endpoint o herramienta IA requiere crear ficheros nuevos; no modificar los existentes |
+| **L** — Liskov Substitution | `AppError extends Error` — sustituible en cualquier contexto; `errorMiddleware` lo trata polimórficamente |
+| **I** — Interface Segregation | Los componentes React reciben solo las props que necesitan, no objetos completos |
+| **D** — Dependency Inversion | Los hooks dependen de `fetch` (abstracción); en tests se sustituye sin tocar el hook |
+
+---
+
+## 18.3 DRY — Don't Repeat Yourself
+
+- `asyncHandler` elimina 10 bloques `try/catch` idénticos en las rutas Express.
+- `currentMonth()` en `lib/date.ts` — función compartida entre `tts.service.ts` y `users.service.ts`.
+- `authHeaders()` en `lib/api.ts` — cabeceras de autenticación usadas en 3 componentes distintos.
+- `ContentItem` en `types/content.ts` — tipo compartido entre hook, componente y tests.
+- `landing-content.ts` — todo el texto de la landing en un único fichero; ningún componente tiene texto hardcodeado.
+
+---
+
+## 18.4 Fail Fast
+
+- Zod valida el cuerpo de la petición **antes** de que llegue al servicio.
+- `requireAuth` rechaza la petición **antes** de ejecutar lógica de negocio.
+- El servicio TTS verifica la cuota disponible **antes** de llamar a la API de OpenAI, evitando costes innecesarios.
+- TypeScript en modo `strict` detecta errores en compilación, no en producción.
+
+---
+
+## 18.5 Patrones de diseño
+
+| Patrón | Implementación |
+|---|---|
+| **Wrapper / Decorator** | `asyncHandler` decora funciones async para propagar errores |
+| **Factory** | `validate(schema)` devuelve un middleware específico para cada schema Zod |
+| **Singleton** | Cliente Prisma con `globalThis` para evitar múltiples conexiones en dev |
+| **Provider** | `Providers.tsx` encapsula `SessionProvider` como Client Component |
+| **Fire-and-Forget** | TTS devuelve `202 Accepted` inmediatamente; la generación ocurre en background |
+
+---
+
+## 18.6 Testing
+
+- Cobertura de código >99% en frontend y backend.
+- Tests en 3 niveles: unitarios (datos), componentes (render + interacción), integración (página completa).
+- `vi.stubGlobal('localStorage', {...})` — mock correcto de APIs de navegador en jsdom.
+- `vi.hoisted()` — resolución correcta del Temporal Dead Zone en mocks que se referencian dentro de factories de `vi.mock()`.
+- Exclusiones de cobertura documentadas y justificadas: solo thin wrappers sobre librerías de terceros sin lógica propia.
+
+---
+
+## 18.7 Seguridad
+
+- Contraseñas hasheadas con bcrypt, factor de coste 12 (~300 ms por verificación).
+- Mensaje de error genérico en login para evitar user enumeration attacks.
+- Sesiones en cookies `httpOnly` — inaccesibles desde JavaScript del navegador.
+- Doble protección de rutas privadas: middleware Edge Runtime + Server Component layout.
+- Contenedores Docker ejecutan con usuario no-root (UID 1001).
+- Secretos en variables de entorno; nunca en código fuente.
+- Helmet en Express para cabeceras de seguridad HTTP (CSP, X-Frame-Options, HSTS).
+
+---
+
+## 18.8 DevOps
+
+- **Multi-stage Docker builds:** la imagen de producción no contiene código fuente, `devDependencies` ni herramientas de compilación (~80 MB vs ~400 MB).
+- **Imágenes etiquetadas por SHA de commit:** permite rollback a cualquier versión anterior.
+- **Volúmenes Docker:** `postgres_data` (base de datos) y `tts_storage` (audios generados) persisten entre reinicios de contenedores.
+- **Jobs de CI en paralelo:** `test-frontend` y `check-backend` corren simultáneamente, con dependencias explícitas mediante `needs`.
+- **Filtros `paths` en CI:** cambios en `memoria/` no disparan el pipeline de tests.
+
+---
+
+## 18.9 Cumplimiento RGPD / LSSI
+
+- Banner de consentimiento con opciones "Aceptar todo" / "Solo esenciales".
+- Preferencia almacenada en `localStorage` (clave `serubix_cookies_consent`), no como cookie real.
+- Página `/politica-de-cookies` con tabla de cookies usadas, base legal y datos de contacto.
+- Página de política excluida de indexación (`robots: noindex`).
+- Cumplimiento RGPD art. 6.1.b (ejecución de contrato) y LSSI art. 22.2 (cookies técnicas).
+
+---
+
+# 19. Roadmap Inicial
 
 ## Fase 1
 Definición funcional y arquitectura.

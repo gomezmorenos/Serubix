@@ -910,47 +910,628 @@ export const metadata: Metadata = {
 
 ---
 
-## 12. Principios de ingeniería aplicados
+## 12. Buenas prácticas de ingeniería — evidencia
 
-### 12.1 Clean Architecture — Frontend
+Esta sección documenta las buenas prácticas aplicadas en el proyecto con evidencia directa del código: fichero de referencia, fragmento real y justificación técnica.
 
-| Capa | Contenido | Depende de |
+---
+
+### 12.1 Clean Architecture
+
+**Principio:** las capas solo conocen a las capas inferiores; nunca al revés.
+
+#### Frontend — 3 capas
+
+| Capa | Fichero(s) | Dependencias |
 |---|---|---|
-| Presentación | `components/landing/*.tsx` | Features |
-| Features | `features/landing/landing-content.ts` | Types |
-| Types | `features/landing/landing.types.ts` | Nada |
+| Presentación | `components/landing/*.tsx` | Solo importan de Features |
+| Features | `features/landing/landing-content.ts` | Solo importan de Types |
+| Types | `features/landing/landing.types.ts` | Sin dependencias |
 
-Los componentes no conocen el origen de los datos. Si mañana el contenido viene de un CMS (Contentful, Sanity), solo cambia `landing-content.ts`.
+**Evidencia:** `HeroSection.tsx` recibe el contenido como prop tipada; no conoce su origen.
 
-### 12.2 Clean Architecture — Backend
+```typescript
+// components/landing/HeroSection.tsx
+export function HeroSection({ hero }: { hero: HeroContent }) {
+  return <section>...</section>
+}
 
-| Capa | Contenido | Depende de |
+// app/page.tsx — la página orquesta, no el componente
+import { content } from '@/features/landing/landing-content'
+<HeroSection hero={content.hero} />
+```
+
+Si el contenido migra a un CMS, únicamente cambia `landing-content.ts`; ningún componente se modifica.
+
+#### Backend — 3 capas
+
+| Capa | Fichero(s) | Dependencias |
 |---|---|---|
 | HTTP | `routes/*.ts` | Services, Middleware |
 | Negocio | `services/*.ts` | Lib (Prisma, JWT, Errors) |
 | Infraestructura | `lib/*.ts`, `schemas/*.ts` | Node.js, npm packages |
 
-Los servicios no importan nada de Express. Si mañana se cambia Express por Fastify, solo cambian los ficheros de `routes/`. Los servicios permanecen intactos.
+**Evidencia:** los servicios no importan nada de Express. `auth.service.ts` no conoce `req`, `res` ni `next`:
 
-### 12.3 SOLID
+```typescript
+// services/auth.service.ts — sin imports de Express
+import { prisma } from '../lib/prisma'
+import { signToken } from '../lib/jwt'
+import { AppError } from '../lib/errors'
 
-- **S (Single Responsibility):** `requireAuth` solo verifica tokens; `validate` solo valida schemas; `errorMiddleware` solo formatea errores.
-- **O (Open/Closed):** añadir un nuevo endpoint requiere un nuevo fichero de ruta y servicio, sin modificar los existentes.
-- **D (Dependency Inversion):** los servicios reciben Prisma como singleton importado, no como parámetro — apropiado para un MVP; en producción se inyectaría como dependencia para facilitar el testing.
+export const authService = {
+  async register({ name, email, password }: RegisterInput) {
+    const existing = await prisma.user.findUnique({ where: { email } })
+    if (existing) throw new AppError('Email ya registrado', 409)
+    // ...
+  }
+}
+```
 
-### 12.4 DRY
+Si el framework cambia de Express a Fastify, solo se reescriben los ficheros de `routes/`. Los servicios no se tocan.
 
-- Contenido landing centralizado en `landing-content.ts`
-- Middleware `validate(schema)` reutilizable en todos los endpoints
-- `AppError` unifica el manejo de errores en toda la API
-- `currentMonth()` definida una sola vez, usada en `users.service` y `tts.service`
+---
 
-### 12.5 Fail Fast
+### 12.2 SOLID
 
-- Zod valida antes de que el request llegue al servicio
-- `requireAuth` rechaza antes de ejecutar lógica de negocio
-- El servicio TTS verifica cuota **antes** de llamar a OpenAI — evita costes innecesarios
-- TypeScript en modo `strict` — los errores se detectan en compilación
+#### S — Single Responsibility Principle
+
+Cada módulo tiene **una única razón para cambiar**.
+
+| Módulo | Responsabilidad única | Fichero |
+|---|---|---|
+| `requireAuth` | Verificar JWT Bearer token | `middleware/auth.middleware.ts` |
+| `validate(schema)` | Validar cuerpo de la petición con Zod | `middleware/validate.middleware.ts` |
+| `errorMiddleware` | Formatear y enviar errores HTTP | `middleware/error.middleware.ts` |
+| `asyncHandler` | Capturar errores async y pasarlos a `next` | `lib/async-handler.ts` |
+| `useContentItems` | Fetching y polling de contenido generado | `hooks/useContentItems.ts` |
+| `useTtsGenerate` | Llamada a la API TTS y gestión de estado | `hooks/useTtsGenerate.ts` |
+| `authHeaders()` | Construir cabeceras de autenticación | `lib/api.ts` |
+
+**Evidencia — `asyncHandler`:** antes de extraerlo, cada ruta tenía su propio bloque try/catch, mezclando la lógica HTTP con el manejo de errores:
+
+```typescript
+// ❌ Antes — cada ruta repetía la misma estructura de 5 líneas
+router.post('/register', async (req, res, next) => {
+  try {
+    const user = await authService.register(req.body)
+    res.status(201).json(user)
+  } catch (err) {
+    next(err)   // ← misma línea en los 10 endpoints
+  }
+})
+
+// ✅ Después — asyncHandler asume esa responsabilidad una sola vez
+// lib/async-handler.ts
+export function asyncHandler(fn: AsyncFn): RequestHandler {
+  return (req, res, next) => fn(req, res, next).catch(next)
+}
+
+// Ruta: solo lógica HTTP, sin try/catch
+router.post('/register', validate(registerSchema), asyncHandler(async (req, res) => {
+  const result = await authService.register(req.body)
+  res.status(201).json(result)
+}))
+```
+
+**Evidencia — hooks de React:** `ContentGrid.tsx` tenía 80 líneas mezclando lógica de fetching con render. Tras aplicar SRP:
+
+```typescript
+// hooks/useContentItems.ts — solo datos
+export function useContentItems() {
+  const [items, setItems] = useState<ContentItem[]>([])
+  const [loading, setLoading] = useState(true)
+  // polling, fetch, cleanup...
+  return { items, loading }
+}
+
+// components/dashboard/ContentGrid.tsx — solo render
+export function ContentGrid() {
+  const { items, loading } = useContentItems()  // datos delegados al hook
+  if (loading) return <Spinner />
+  return <table>...</table>
+}
+```
+
+#### O — Open/Closed Principle
+
+El sistema está **abierto para extensión, cerrado para modificación**.
+
+**Evidencia:** añadir la herramienta `text-to-image` no requiere modificar ningún fichero existente:
+
+```
++ Backend/src/schemas/image.schema.ts       (nuevo)
++ Backend/src/services/image.service.ts     (nuevo)
++ Backend/src/routes/image.routes.ts        (nuevo, 3 líneas en app.ts)
+```
+
+Los middleware `requireAuth`, `validate`, `errorMiddleware` y `asyncHandler` funcionan sin cambios con la nueva ruta.
+
+#### L — Liskov Substitution Principle
+
+**Evidencia:** `AppError` extiende `Error` y puede sustituirlo en cualquier contexto. El `errorMiddleware` usa `instanceof AppError` para diferenciar errores controlados de los inesperados, sin acoplarse a ninguna ruta concreta:
+
+```typescript
+// lib/errors.ts
+export class AppError extends Error {
+  constructor(message: string, public statusCode: number) {
+    super(message)
+  }
+}
+
+// middleware/error.middleware.ts
+export function errorMiddleware(err: Error, req: Request, res: Response) {
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({ error: err.message })
+  }
+  res.status(500).json({ error: 'Error interno del servidor' })
+}
+```
+
+#### I — Interface Segregation Principle
+
+**Evidencia:** los componentes React solo reciben las props que necesitan. `ProfileForm` no recibe la sesión entera; recibe solo `name` y `email`:
+
+```typescript
+// Bien — solo lo necesario
+interface ProfileFormProps {
+  name: string | null | undefined
+  email: string | null | undefined
+}
+export function ProfileForm({ name, email }: Readonly<ProfileFormProps>) { ... }
+
+// El token JWT se obtiene internamente vía useSession, no como prop
+// → el padre no necesita saber que ProfileForm habla con la API
+```
+
+#### D — Dependency Inversion Principle
+
+**Evidencia:** los hooks del frontend dependen de abstracciones (`fetch`, variables de entorno), no de implementaciones concretas. En tests se mockea `fetch` globalmente sin tocar el hook:
+
+```typescript
+// hooks/useTtsGenerate.ts — depende de fetch (abstracción)
+const apiUrl = process.env.NEXT_PUBLIC_API_URL  // leído dentro de la función
+const res = await fetch(`${apiUrl}/tools/tts`, { ... })
+
+// test/components/TtsWidget.test.tsx — sustitución sin modificar el hook
+vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }))
+```
+
+---
+
+### 12.3 DRY — Don't Repeat Yourself
+
+**Principio:** cada pieza de conocimiento tiene una representación única y autoritativa.
+
+#### Eliminación de try/catch duplicados
+
+**Evidencia:** `asyncHandler` elimina 10 bloques idénticos (uno por endpoint). Antes de la refactorización:
+
+```typescript
+// routes/auth.routes.ts  — duplicación en CADA ruta
+router.post('/login', async (req, res, next) => {
+  try { ... } catch (err) { next(err) }    // línea 1
+})
+router.get('/me', requireAuth, async (req, res, next) => {
+  try { ... } catch (err) { next(err) }    // línea 2, idéntica
+})
+// × 10 endpoints en 4 ficheros de rutas
+```
+
+Después: 0 bloques try/catch en rutas. El conocimiento de "cómo propagar errores async" vive en un único lugar.
+
+#### Función `currentMonth()` centralizada
+
+```typescript
+// lib/date.ts — una sola definición
+export function currentMonth(): number {
+  const d = new Date()
+  return d.getFullYear() * 100 + (d.getMonth() + 1)
+}
+
+// Usada en services/tts.service.ts Y services/users.service.ts
+// Si cambia el formato del mes, se cambia en un solo lugar
+```
+
+#### Cabeceras de autenticación centralizadas
+
+```typescript
+// lib/api.ts — definición única
+export function authHeaders(token: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+  }
+}
+
+// Usada en: ContentGrid.tsx, TtsWidget (via hook), ProfileForm.tsx
+// Si el formato del header cambia, se cambia en un solo lugar
+```
+
+#### Tipo `ContentItem` como fuente única de verdad
+
+```typescript
+// types/content.ts
+export interface ContentItem {
+  id: string
+  tool: string
+  label: string
+  status: 'pending' | 'done' | 'error'
+  filename: string | null
+  createdAt: string
+}
+// Importado en: useContentItems.ts, ContentGrid.tsx, test/ContentGrid.test.tsx
+// El tipo evoluciona en un solo fichero; TypeScript propaga el cambio
+```
+
+#### Contenido de la landing centralizado
+
+```typescript
+// features/landing/landing-content.ts — fuente única
+export const content = {
+  hero: { headline: '...', subheadline: '...', cta: '...' },
+  services: [...],
+  footer: { links: [...], email: 'hola@serubix.com' },
+}
+// 10 componentes consumen este objeto; ninguno tiene texto hardcodeado
+```
+
+---
+
+### 12.4 Fail Fast
+
+**Principio:** detectar y rechazar entradas inválidas lo antes posible, antes de ejecutar lógica costosa.
+
+#### Validación en el boundary del sistema
+
+```typescript
+// middleware/validate.middleware.ts
+export function validate(schema: ZodSchema) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.body)
+    if (!result.success) {
+      // ← rechaza ANTES de llamar al servicio
+      return res.status(400).json({
+        error: 'Datos inválidos',
+        details: result.error.flatten().fieldErrors,
+      })
+    }
+    req.body = result.data   // body tipado y validado
+    next()
+  }
+}
+```
+
+#### Autenticación antes de lógica de negocio
+
+```typescript
+// Orden en la ruta: requireAuth → validate → handler
+router.post('/tools/tts',
+  requireAuth,           // 1. ¿Tiene token válido? → 401 si no
+  validate(ttsSchema),   // 2. ¿Body correcto?       → 400 si no
+  asyncHandler(async (req, res) => {
+    // Solo llega aquí si supera los dos filtros anteriores
+    const id = await ttsService.startGeneration(req.user!.id, req.body)
+    res.status(202).json({ id })
+  })
+)
+```
+
+#### Verificación de cuota antes de llamar a OpenAI
+
+```typescript
+// services/tts.service.ts
+async function checkPlanLimit(userId: string, textLength: number) {
+  const agg = await prisma.usage.aggregate({ _sum: { amount: true }, where: { userId, tool: 'tts', month: currentMonth() } })
+  const used = agg._sum.amount ?? 0
+  if (used + textLength > ttsLimit) {
+    throw new AppError(`Límite mensual alcanzado`, 402)
+    // ← lanza ANTES de llamar a openai.audio.speech.create()
+    // → evita un coste de API innecesario
+  }
+}
+```
+
+#### TypeScript en modo strict
+
+```json
+// tsconfig.json — Backend y Frontend
+{ "compilerOptions": { "strict": true } }
+```
+
+Con `strict: true`, TypeScript activa `noImplicitAny`, `strictNullChecks`, `strictFunctionTypes` y otros 6 flags. Los errores se detectan en tiempo de compilación, no en producción.
+
+---
+
+### 12.5 Patrones de diseño aplicados
+
+#### Patrón Wrapper / Decorator — `asyncHandler`
+
+```typescript
+// lib/async-handler.ts
+// Decora una función async para que sus errores vayan a next()
+export function asyncHandler(fn: AsyncFn): RequestHandler {
+  return (req, res, next) => fn(req, res, next).catch(next)
+}
+```
+
+#### Patrón Factory — `validate(schema)`
+
+El middleware `validate` es una factory function: recibe un schema Zod y **devuelve** un middleware Express. Esto permite reutilizarlo con cualquier schema sin duplicar código:
+
+```typescript
+router.post('/register', validate(registerSchema), ...)
+router.post('/login',    validate(loginSchema), ...)
+router.patch('/users/me', validate(updateProfileSchema), ...)
+```
+
+#### Patrón Singleton — cliente Prisma
+
+```typescript
+// lib/prisma.ts
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
+export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+```
+
+Garantiza que solo existe una conexión al pool de PostgreSQL en desarrollo (donde Next.js hace hot reload), evitando el error `Too many connections`.
+
+#### Patrón Provider — `Providers.tsx`
+
+```typescript
+// components/Providers.tsx
+'use client'
+import { SessionProvider } from 'next-auth/react'
+
+export function Providers({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <SessionProvider>{children}</SessionProvider>
+}
+```
+
+Encapsula el context provider de Auth.js en un Client Component, permitiendo que el layout raíz sea un Server Component puro. El patrón Provider es el estándar de React para inyección de contexto.
+
+#### Patrón Fire-and-Forget con gestión de errores
+
+```typescript
+// services/tts.service.ts
+// startGeneration devuelve 202 inmediatamente
+// La generación real ocurre en background
+generateAndStore(userId, content.id, input).catch(async (err) => {
+  console.error('[TTS]', err.message)
+  await contentService.markError(content.id).catch(() => null)
+  // ← el catch interno evita unhandled promise rejection
+})
+
+return content.id  // respuesta inmediata al cliente
+```
+
+Este patrón permite que el cliente reciba una respuesta rápida y monitorice el progreso mediante polling, en lugar de esperar 3-5 segundos a que OpenAI genere el audio.
+
+---
+
+### 12.6 Buenas prácticas de testing
+
+#### Mock de dependencias de sistema (`localStorage`)
+
+jsdom, el entorno de test de Vitest, tiene una implementación parcial de `localStorage` sin soporte para `clear()`. La solución correcta es sustituir el objeto completo, no parchear métodos individuales:
+
+```typescript
+// test/components/CookieBanner.test.tsx
+let mockStore: Record<string, string> = {}
+vi.stubGlobal('localStorage', {
+  getItem:    (key: string): string | null => mockStore[key] ?? null,
+  setItem:    (key: string, value: string) => { mockStore[key] = value },
+  removeItem: (key: string)               => { delete mockStore[key] },
+  clear:      ()                          => { mockStore = {} },
+})
+beforeEach(() => { mockStore = {} })  // reset entre tests
+```
+
+#### `vi.hoisted()` — mocks que se referencian en factories
+
+`vi.mock()` se hoist al inicio del módulo antes de que los imports se resuelvan. Si el factory de `vi.mock()` referencia una variable declarada después, esa variable está en el Temporal Dead Zone (TDZ) y lanza `ReferenceError`. `vi.hoisted()` resuelve este problema:
+
+```typescript
+// ❌ Sin hoisting — ReferenceError en tiempo de ejecución
+const mockSignIn = vi.fn()
+vi.mock('next-auth/react', () => ({ signIn: mockSignIn }))
+// mockSignIn está en TDZ cuando el factory se ejecuta
+
+// ✅ Con hoisting — la función se inicializa antes del hoisting del mock
+const mockSignIn = vi.hoisted(() => vi.fn())
+vi.mock('next-auth/react', () => ({ signIn: mockSignIn }))
+```
+
+#### Exclusiones de cobertura justificadas
+
+No todo el código debe medirse con cobertura. Los ficheros excluidos son thin wrappers sobre librerías de terceros que no tienen lógica propia que testear:
+
+```typescript
+// vitest.config.ts
+coverage: {
+  exclude: [
+    'src/components/Providers.tsx',   // wrapper de 3 líneas sobre SessionProvider
+    'src/lib/auth.ts',                // configuración declarativa de Auth.js
+    'src/middleware.ts',              // infraestructura de Next.js
+    'src/app/api/**',                 // re-export de 2 líneas de Auth.js
+    'src/features/landing/landing.types.ts',  // solo interfaces TypeScript
+  ]
+}
+```
+
+Incluir estos ficheros en cobertura daría falsa seguridad: los tests pasarían sin validar nada de negocio.
+
+#### Tests en 3 niveles
+
+| Nivel | Qué valida | Ejemplo |
+|---|---|---|
+| **Unitario** | Integridad de datos sin render | `landing-content.test.ts` — URLs válidas, arrays no vacíos |
+| **Componente** | Render, props, interacciones, estados | `CookieBanner.test.tsx` — aceptar/rechazar cookies |
+| **Integración** | Composición de página completa | `page.test.tsx` — marca, navegación, SEO |
+
+---
+
+### 12.7 Buenas prácticas de seguridad
+
+#### Contraseñas — bcrypt con factor de coste 12
+
+```typescript
+// services/auth.service.ts
+const passwordHash = await bcrypt.hash(password, 12)
+// Factor 12 → ~300ms por verificación → ataques de fuerza bruta inviables
+// bcryptjs (pure JS) → sin dependencias nativas → funciona en Alpine Linux
+```
+
+#### Error genérico para evitar user enumeration
+
+```typescript
+// No se indica si el email no existe o la contraseña es incorrecta
+// Un atacante no puede saber si un email está registrado
+if (!user?.passwordHash) throw new AppError('Credenciales incorrectas', 401)
+const valid = await bcrypt.compare(password, user.passwordHash)
+if (!valid)              throw new AppError('Credenciales incorrectas', 401)
+//                                          ↑ mismo mensaje en ambos casos
+```
+
+#### Doble protección de rutas privadas
+
+```typescript
+// Nivel 1 — middleware.ts (Edge Runtime, ejecuta ANTES del render)
+if (!isLoggedIn && isProtected) redirect('/login?callbackUrl=...')
+
+// Nivel 2 — app/(dashboard)/layout.tsx (Server Component)
+const session = await auth()
+if (!session?.user) redirect('/login')
+// Protección redundante: si el middleware falla, el layout rechaza igualmente
+```
+
+#### Contenedores sin privilegios de root
+
+```dockerfile
+# Backend/Dockerfile — Stage runner
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 backend
+USER backend   # ← el proceso Node.js nunca tiene permisos de root
+```
+
+#### Cookies httpOnly — sesión inaccesible desde JavaScript
+
+Auth.js almacena la sesión en una cookie `httpOnly`, `secure` y con `SameSite=lax`. JavaScript del navegador no puede leerla, lo que elimina el vector de ataque XSS más común.
+
+---
+
+### 12.8 Buenas prácticas de DevOps
+
+#### Multi-stage build — imagen Docker mínima
+
+```dockerfile
+# Stage builder: incluye devDependencies, TypeScript, Prisma CLI
+FROM node:20-alpine AS builder
+RUN npm ci && npx prisma generate && npm run build
+
+# Stage runner: SOLO artefactos de producción
+FROM node:20-alpine AS runner
+COPY --from=builder /app/dist ./dist          # código compilado
+COPY --from=builder /app/node_modules ./node_modules  # solo prod deps
+COPY --from=builder /app/prisma ./prisma      # schema para migraciones
+# → sin src/, sin tsconfig, sin devDependencies
+# → imagen ~80 MB vs ~400 MB sin multi-stage
+```
+
+#### Imágenes etiquetadas por SHA de commit
+
+```yaml
+# .github/workflows/deploy.yml
+docker build -t ghcr.io/repo/backend:latest \
+             -t ghcr.io/repo/backend:${{ github.sha }} .
+# :latest → deploy automático siempre apunta a lo último
+# :SHA    → permite rollback a cualquier versión anterior
+```
+
+#### Volúmenes Docker para persistencia de datos
+
+```yaml
+# docker-compose.yml
+services:
+  db:
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # BD persiste entre reinicios
+  backend:
+    volumes:
+      - tts_storage:/app/storage                # audios persisten entre reinicios
+
+volumes:
+  postgres_data:
+  tts_storage:
+```
+
+Sin `tts_storage`, cada reinicio del contenedor borraría todos los audios generados.
+
+#### Jobs de CI paralelos con dependencias explícitas
+
+```yaml
+# .github/workflows/ci.yml
+jobs:
+  test-frontend:   { ... }    # paralelo
+  check-backend:   { ... }    # paralelo
+
+  build-frontend:
+    needs: test-frontend       # solo si tests pasan
+  test-backend-integration:
+    needs: check-backend       # solo si types + build pasan
+```
+
+`test-frontend` y `check-backend` corren en paralelo, reduciendo el tiempo total de CI a ~3 minutos.
+
+---
+
+### 12.9 Cumplimiento RGPD / LSSI
+
+#### Banner de consentimiento de cookies
+
+```typescript
+// components/landing/CookieBanner.tsx
+'use client'
+export function CookieBanner() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    // Solo muestra el banner si no hay decisión previa almacenada
+    const consent = localStorage.getItem('serubix_cookies_consent')
+    if (!consent) setVisible(true)
+  }, [])
+
+  function accept() {
+    localStorage.setItem('serubix_cookies_consent', 'accepted')
+    setVisible(false)
+  }
+  function reject() {
+    localStorage.setItem('serubix_cookies_consent', 'rejected')
+    setVisible(false)
+  }
+
+  if (!visible) return null
+  return (
+    <div role="dialog" aria-live="polite">
+      <button onClick={accept}>Aceptar todo</button>
+      <button onClick={reject}>Solo esenciales</button>
+    </div>
+  )
+}
+```
+
+#### Política de cookies excluida de indexación
+
+```typescript
+// app/politica-de-cookies/page.tsx
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+  // → los buscadores no indexan la página de política
+  // → cumple con la recomendación de la AEPD
+}
+```
+
+La política documenta las 4 cookies técnicas en uso (`authjs.session-token`, `authjs.csrf-token`, `authjs.callback-url`, `serubix_cookies_consent`) con base legal RGPD art. 6.1.b (ejecución de contrato) y LSSI art. 22.2 (cookies técnicas exentas de consentimiento).
 
 ---
 
