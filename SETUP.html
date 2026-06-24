@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serubix — Guía de instalación local</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #09090b;
+      --surface:   #18181b;
+      --border:    #27272a;
+      --border2:   #3f3f46;
+      --text:      #fafafa;
+      --muted:     #a1a1aa;
+      --subtle:    #71717a;
+      --blue:      #3b82f6;
+      --blue-dim:  #1d4ed8;
+      --green:     #22c55e;
+      --green-dim: #16a34a;
+      --yellow:    #eab308;
+      --red:       #ef4444;
+      --orange:    #f97316;
+      --purple:    #a855f7;
+      --code-bg:   #0f0f12;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    /* ── Layout ── */
+    .layout { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 28px 0 40px;
+    }
+    .sidebar-logo {
+      padding: 0 24px 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .sidebar-logo .name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+    .sidebar-logo .tagline {
+      font-size: 11px;
+      color: var(--subtle);
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .nav-group-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--subtle);
+      padding: 12px 24px 6px;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 24px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13.5px;
+      transition: color .15s, background .15s;
+      border-left: 2px solid transparent;
+    }
+    .nav-link:hover { color: var(--text); background: rgba(255,255,255,.04); }
+    .nav-link.active { color: var(--blue); border-left-color: var(--blue); background: rgba(59,130,246,.07); }
+    .nav-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    /* ── Main content ── */
+    .content {
+      flex: 1;
+      max-width: 820px;
+      padding: 52px 56px 100px;
+    }
+
+    /* ── Header ── */
+    .page-header { margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+    .page-header h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+    .page-header p { margin-top: 10px; color: var(--muted); font-size: 15px; max-width: 540px; line-height: 1.7; }
+    .badges { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    .badge {
+      font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 20px;
+      border: 1px solid; letter-spacing: 0.2px;
+    }
+    .badge-blue   { color: #93c5fd; border-color: #1e40af; background: rgba(59,130,246,.1); }
+    .badge-green  { color: #86efac; border-color: #15803d; background: rgba(34,197,94,.1); }
+    .badge-yellow { color: #fde68a; border-color: #92400e; background: rgba(234,179,8,.1); }
+
+    /* ── Sections ── */
+    section { margin-bottom: 60px; scroll-margin-top: 32px; }
+    section h2 {
+      font-size: 20px; font-weight: 700; color: var(--text);
+      margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+      letter-spacing: -0.3px;
+    }
+    section h2 .section-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    section h3 { font-size: 14px; font-weight: 600; color: var(--text); margin: 24px 0 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Callouts ── */
+    .callout {
+      border-radius: 8px; padding: 14px 18px; margin: 16px 0;
+      border-left: 3px solid; font-size: 13.5px; line-height: 1.65;
+    }
+    .callout-title { font-weight: 600; margin-bottom: 4px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .callout-info    { border-color: var(--blue);   background: rgba(59,130,246,.08);  color: #bfdbfe; }
+    .callout-info    .callout-title { color: var(--blue); }
+    .callout-warn    { border-color: var(--yellow); background: rgba(234,179,8,.08);   color: #fef08a; }
+    .callout-warn    .callout-title { color: var(--yellow); }
+    .callout-danger  { border-color: var(--red);    background: rgba(239,68,68,.08);   color: #fca5a5; }
+    .callout-danger  .callout-title { color: var(--red); }
+    .callout-success { border-color: var(--green);  background: rgba(34,197,94,.08);   color: #bbf7d0; }
+    .callout-success .callout-title { color: var(--green); }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: var(--code-bg); border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden; margin: 12px 0;
+    }
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 14px; background: rgba(255,255,255,.03);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-label { font-size: 11px; font-weight: 500; color: var(--subtle); letter-spacing: 0.5px; text-transform: uppercase; }
+    .copy-btn {
+      font-size: 11px; color: var(--subtle); background: none; border: 1px solid var(--border);
+      border-radius: 5px; padding: 3px 9px; cursor: pointer; transition: all .15s;
+      font-family: inherit;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--border2); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green-dim); }
+    pre {
+      padding: 16px 18px; overflow-x: auto; font-family: "SF Mono", "Fira Code", Consolas, "Courier New", monospace;
+      font-size: 13px; line-height: 1.7; color: #e2e8f0;
+    }
+    code {
+      font-family: "SF Mono", "Fira Code", Consolas, "Courier New", monospace;
+      font-size: 12.5px; background: rgba(255,255,255,.07); color: #c4b5fd;
+      padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,.08);
+    }
+    pre code { background: none; border: none; color: inherit; padding: 0; font-size: inherit; }
+
+    /* ── Steps ── */
+    .steps { counter-reset: step-counter; display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex; gap: 20px; padding: 0 0 28px;
+      position: relative;
+    }
+    .step:not(:last-child)::before {
+      content: ''; position: absolute; left: 16px; top: 36px; bottom: 0;
+      width: 1px; background: var(--border);
+    }
+    .step-number {
+      counter-increment: step-counter;
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: var(--blue-dim); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; position: relative; z-index: 1;
+    }
+    .step-body { flex: 1; padding-top: 4px; }
+    .step-title { font-weight: 600; font-size: 15px; color: var(--text); margin-bottom: 8px; }
+    .step-desc { color: var(--muted); font-size: 13.5px; margin-bottom: 8px; }
+
+    /* ── Requirements grid ── */
+    .req-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+    .req-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .req-card .req-name { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px; display: flex; align-items: center; gap: 7px; }
+    .req-card .req-version { font-size: 12px; color: var(--blue); font-weight: 500; margin-bottom: 6px; }
+    .req-card .req-desc { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+    .req-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; }
+
+    /* ── Env table ── */
+    .env-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .env-table th {
+      text-align: left; padding: 9px 14px; font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px; color: var(--subtle);
+      border-bottom: 1px solid var(--border); background: rgba(255,255,255,.02);
+    }
+    .env-table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; }
+    .env-table tr:last-child td { border-bottom: none; }
+    .env-table tr:hover td { background: rgba(255,255,255,.02); }
+    .env-key { font-family: "SF Mono", "Fira Code", Consolas, monospace; color: #c4b5fd; font-size: 12px; white-space: nowrap; }
+    .env-req { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+    .env-req.required { background: rgba(239,68,68,.15); color: #f87171; }
+    .env-req.optional { background: rgba(113,113,122,.15); color: var(--subtle); }
+    .env-desc { color: var(--muted); line-height: 1.5; }
+    .env-example { display: block; font-family: "SF Mono", "Fira Code", Consolas, monospace; font-size: 11px; color: var(--subtle); margin-top: 3px; }
+
+    /* ── Mode tabs ── */
+    .mode-tabs { display: flex; gap: 0; margin-bottom: 24px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); width: fit-content; }
+    .mode-tab {
+      padding: 8px 20px; font-size: 13px; font-weight: 500; cursor: pointer;
+      border: none; transition: all .15s; font-family: inherit;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .mode-tab.a { background: var(--blue-dim); color: white; }
+    .mode-tab.b { background: var(--surface); color: var(--muted); }
+
+    /* ── URL list ── */
+    .url-list { display: flex; flex-direction: column; gap: 8px; }
+    .url-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    }
+    .url-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .url-service { font-weight: 600; font-size: 13.5px; min-width: 110px; }
+    .url-addr { font-family: "SF Mono", "Fira Code", Consolas, monospace; font-size: 12.5px; color: #60a5fa; }
+    .url-desc { color: var(--subtle); font-size: 12.5px; margin-left: auto; }
+
+    /* ── File list ── */
+    .missing-file {
+      display: flex; align-items: flex-start; gap: 14px; padding: 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px;
+    }
+    .missing-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .missing-name { font-family: "SF Mono", "Fira Code", Consolas, monospace; font-size: 13px; color: #fde68a; font-weight: 600; margin-bottom: 4px; }
+    .missing-desc { color: var(--muted); font-size: 13px; line-height: 1.55; }
+
+    /* ── Troubleshooting ── */
+    .problem { margin-bottom: 20px; }
+    .problem-title { font-weight: 600; font-size: 13.5px; color: #f87171; margin-bottom: 6px; display: flex; align-items: center; gap: 7px; }
+    .problem-desc { color: var(--muted); font-size: 13.5px; margin-bottom: 8px; }
+
+    /* ── Misc ── */
+    p { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 8px; }
+    ul, ol { color: var(--muted); font-size: 14px; line-height: 1.7; padding-left: 22px; margin: 8px 0; }
+    li { margin-bottom: 4px; }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { color: var(--text); font-weight: 600; }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+    /* ── Syntax highlight tokens ── */
+    .tok-comment { color: #6b7280; }
+    .tok-key     { color: #93c5fd; }
+    .tok-val     { color: #86efac; }
+    .tok-cmd     { color: #fde68a; }
+    .tok-flag    { color: #c4b5fd; }
+    .tok-str     { color: #fca5a5; }
+
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .content { padding: 32px 24px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ═══════════════════════════════════════════════════
+       SIDEBAR
+  ═══════════════════════════════════════════════════ -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="name">Serubix</div>
+      <div class="tagline">Guía de instalación local</div>
+    </div>
+
+    <div class="nav-group-label">Antes de empezar</div>
+    <a href="#requisitos"  class="nav-link"><span class="nav-dot" style="background:#22c55e"></span> Requisitos previos</a>
+    <a href="#ficheros"    class="nav-link"><span class="nav-dot" style="background:#f97316"></span> Ficheros no incluidos</a>
+    <a href="#env"         class="nav-link"><span class="nav-dot" style="background:#a855f7"></span> Variables de entorno</a>
+
+    <div class="nav-group-label">Instalación</div>
+    <a href="#clonar"      class="nav-link"><span class="nav-dot" style="background:#3b82f6"></span> Clonar el repositorio</a>
+    <a href="#docker"      class="nav-link"><span class="nav-dot" style="background:#3b82f6"></span> Opción A — Docker</a>
+    <a href="#manual"      class="nav-link"><span class="nav-dot" style="background:#3b82f6"></span> Opción B — Sin Docker</a>
+
+    <div class="nav-group-label">Verificación</div>
+    <a href="#urls"        class="nav-link"><span class="nav-dot" style="background:#22c55e"></span> URLs del proyecto</a>
+    <a href="#comandos"    class="nav-link"><span class="nav-dot" style="background:#eab308"></span> Comandos útiles</a>
+    <a href="#problemas"   class="nav-link"><span class="nav-dot" style="background:#ef4444"></span> Solución de problemas</a>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════
+       MAIN
+  ═══════════════════════════════════════════════════ -->
+  <main class="content">
+
+    <!-- HEADER -->
+    <div class="page-header">
+      <h1>Cómo levantar Serubix en local</h1>
+      <p>Esta guía cubre todo lo necesario para clonar el repositorio desde GitHub y tener el proyecto funcionando en tu máquina en menos de 15 minutos.</p>
+      <div class="badges">
+        <span class="badge badge-blue">Next.js 15</span>
+        <span class="badge badge-blue">Express 5</span>
+        <span class="badge badge-blue">Node 20</span>
+        <span class="badge badge-green">PostgreSQL 16</span>
+        <span class="badge badge-yellow">Docker opcional</span>
+      </div>
+    </div>
+
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- 1. REQUISITOS PREVIOS                           -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="requisitos">
+      <h2>
+        <span class="section-icon" style="background:rgba(34,197,94,.15); color:#22c55e;">✓</span>
+        Requisitos previos
+      </h2>
+
+      <p>Asegúrate de tener instaladas las siguientes herramientas antes de continuar.</p>
+
+      <div class="req-grid" style="margin-top:16px;">
+
+        <div class="req-card">
+          <div class="req-name"><span class="req-dot"></span> Node.js</div>
+          <div class="req-version">v20 LTS o superior</div>
+          <div class="req-desc">Necesario para el frontend y el backend. Recomendado instalar con <strong>nvm</strong>.</div>
+        </div>
+
+        <div class="req-card">
+          <div class="req-name"><span class="req-dot"></span> npm</div>
+          <div class="req-version">v10 o superior</div>
+          <div class="req-desc">Viene incluido con Node.js. Gestiona las dependencias de ambos proyectos.</div>
+        </div>
+
+        <div class="req-card">
+          <div class="req-name"><span class="req-dot" style="background:#3b82f6"></span> Docker Desktop</div>
+          <div class="req-version">v24 o superior</div>
+          <div class="req-desc">Sólo necesario para la <strong>Opción A</strong>. Incluye Docker Compose v2.</div>
+        </div>
+
+        <div class="req-card">
+          <div class="req-name"><span class="req-dot" style="background:#f97316"></span> PostgreSQL</div>
+          <div class="req-version">v16</div>
+          <div class="req-desc">Sólo necesario para la <strong>Opción B</strong>. En la Opción A lo levanta Docker.</div>
+        </div>
+
+        <div class="req-card">
+          <div class="req-name"><span class="req-dot" style="background:#a855f7"></span> Git</div>
+          <div class="req-version">v2.x</div>
+          <div class="req-desc">Para clonar el repositorio desde GitHub.</div>
+        </div>
+
+        <div class="req-card">
+          <div class="req-name"><span class="req-dot" style="background:#eab308"></span> Cuenta OpenAI</div>
+          <div class="req-version">API key con créditos</div>
+          <div class="req-desc">Necesaria para la herramienta Text to Speech. Sin ella el TTS devuelve 503.</div>
+        </div>
+
+        <div class="req-card">
+          <div class="req-name"><span class="req-dot" style="background:#ef4444"></span> Google OAuth</div>
+          <div class="req-version">Client ID + Secret</div>
+          <div class="req-desc">Para el login con Google. Opcional si solo usas email/contraseña.</div>
+        </div>
+
+      </div>
+
+      <div style="margin-top:20px;">
+        <h3>Verificar versiones instaladas</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-label">Terminal</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><code>node --version    <span class="tok-comment"># debe ser v20.x o superior</span>
+npm --version     <span class="tok-comment"># debe ser 10.x o superior</span>
+docker --version  <span class="tok-comment"># opcional — para Opción A</span>
+git --version</code></pre>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- 2. FICHEROS NO INCLUIDOS EN EL REPO             -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="ficheros">
+      <h2>
+        <span class="section-icon" style="background:rgba(249,115,22,.15); color:#f97316;">⚠</span>
+        Ficheros no incluidos en el repositorio
+      </h2>
+
+      <p>El repositorio no contiene ficheros con secretos ni configuración local. Deberás crearlos antes de arrancar el proyecto.</p>
+
+      <div style="margin-top:16px;">
+
+        <div class="missing-file">
+          <div class="missing-icon">📄</div>
+          <div>
+            <div class="missing-name">/.env</div>
+            <div class="missing-desc">
+              Contiene <strong>todas las variables de entorno</strong> del proyecto: credenciales de base de datos, claves de API, secretos de Auth.js y configuración de despliegue. Está excluido del repositorio por seguridad.<br>
+              <strong>Cómo crearlo:</strong> copia <code>.env.example</code> que sí está en el repo y rellena los valores.
+            </div>
+          </div>
+        </div>
+
+        <div class="missing-file">
+          <div class="missing-icon">📂</div>
+          <div>
+            <div class="missing-name">/Backend/storage/</div>
+            <div class="missing-desc">
+              Directorio donde el backend guarda los audios generados por Text to Speech. <strong>Se crea automáticamente</strong> la primera vez que se genera un audio, no hay que crearlo manualmente.<br>
+              Con Docker, este directorio está montado como volumen <code>tts_storage</code> para que los archivos persistan entre reinicios.
+            </div>
+          </div>
+        </div>
+
+        <div class="missing-file">
+          <div class="missing-icon">📂</div>
+          <div>
+            <div class="missing-name">/FrontEnd/.next/</div>
+            <div class="missing-desc">
+              Directorio de compilación de Next.js. <strong>Se genera automáticamente</strong> al ejecutar <code>npm run build</code> o <code>npm run dev</code>.
+            </div>
+          </div>
+        </div>
+
+        <div class="missing-file">
+          <div class="missing-icon">📂</div>
+          <div>
+            <div class="missing-name">/Backend/dist/</div>
+            <div class="missing-desc">
+              Salida de la compilación TypeScript del backend. <strong>Se genera automáticamente</strong> al ejecutar <code>npm run build</code>. En desarrollo (<code>npm run dev</code>) no es necesario compilar.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- 3. VARIABLES DE ENTORNO                         -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="env">
+      <h2>
+        <span class="section-icon" style="background:rgba(168,85,247,.15); color:#a855f7;">⚙</span>
+        Variables de entorno
+      </h2>
+
+      <p>El proyecto usa un único fichero <code>.env</code> en la raíz del repositorio. Cópialo desde la plantilla:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal — raíz del proyecto</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>cp .env.example .env</code></pre>
+      </div>
+
+      <p style="margin-top:12px;">Luego edita <code>.env</code> y rellena cada valor:</p>
+
+      <div style="margin-top:16px; border: 1px solid var(--border); border-radius:8px; overflow:hidden;">
+        <table class="env-table">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Obligatorio</th>
+              <th>Descripción y ejemplo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="env-key">DOMAIN</span></td>
+              <td><span class="env-req optional">opcional</span></td>
+              <td class="env-desc">Dominio del VPS en producción. En local puede dejarse vacío o poner <code>localhost</code>.
+                <span class="env-example">DOMAIN=serubix.com</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">POSTGRES_USER</span></td>
+              <td><span class="env-req required">requerido</span></td>
+              <td class="env-desc">Usuario de PostgreSQL.
+                <span class="env-example">POSTGRES_USER=serubix</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">POSTGRES_PASSWORD</span></td>
+              <td><span class="env-req required">requerido</span></td>
+              <td class="env-desc">Contraseña de PostgreSQL. Pon cualquier valor en local.
+                <span class="env-example">POSTGRES_PASSWORD=mi_password_segura</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">POSTGRES_DB</span></td>
+              <td><span class="env-req required">requerido</span></td>
+              <td class="env-desc">Nombre de la base de datos.
+                <span class="env-example">POSTGRES_DB=serubix</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">DATABASE_URL</span></td>
+              <td><span class="env-req required">requerido</span></td>
+              <td class="env-desc">Cadena de conexión completa de PostgreSQL. Con Docker usa el hostname <code>db</code>; sin Docker usa <code>localhost</code>.
+                <span class="env-example">DATABASE_URL=postgresql://serubix:password@db:5432/serubix</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">JWT_SECRET</span></td>
+              <td><span class="env-req required">requerido</span></td>
+              <td class="env-desc">Secreto para firmar los tokens JWT del backend. Mínimo 32 caracteres.
+                <span class="env-example">openssl rand -base64 32</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">AUTH_SECRET</span></td>
+              <td><span class="env-req required">requerido</span></td>
+              <td class="env-desc">Secreto de Auth.js v5 (NextAuth). Mínimo 32 caracteres.
+                <span class="env-example">openssl rand -base64 32</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">AUTH_GOOGLE_ID</span></td>
+              <td><span class="env-req optional">opcional</span></td>
+              <td class="env-desc">Client ID de Google OAuth. Necesario solo si quieres login con Google. Obtén las credenciales en <strong>console.cloud.google.com → APIs y Servicios → Credenciales</strong>. URI de redirección autorizada: <code>http://localhost:3000/api/auth/callback/google</code>
+                <span class="env-example">AUTH_GOOGLE_ID=xxxx.apps.googleusercontent.com</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">AUTH_GOOGLE_SECRET</span></td>
+              <td><span class="env-req optional">opcional</span></td>
+              <td class="env-desc">Client Secret de Google OAuth.
+                <span class="env-example">AUTH_GOOGLE_SECRET=GOCSPX-xxxx</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">OPENAI_API_KEY</span></td>
+              <td><span class="env-req optional">opcional</span></td>
+              <td class="env-desc">Clave de API de OpenAI. Necesaria para la herramienta Text to Speech. Sin ella el endpoint devuelve <code>503</code>. Obtén una en <strong>platform.openai.com/api-keys</strong>.
+                <span class="env-example">OPENAI_API_KEY=sk-proj-xxxx</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">NEXT_PUBLIC_API_URL</span></td>
+              <td><span class="env-req required">requerido</span></td>
+              <td class="env-desc">URL de la API <strong>visible desde el navegador</strong>. Con Docker y nginx: <code>http://localhost/api</code>. Sin Docker: <code>http://localhost:4000</code>.
+                <span class="env-example">NEXT_PUBLIC_API_URL=http://localhost:4000</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">FRONTEND_URL</span></td>
+              <td><span class="env-req optional">opcional</span></td>
+              <td class="env-desc">URL del frontend usada por el backend para CORS.
+                <span class="env-example">FRONTEND_URL=http://localhost:3000</span>
+              </td>
+            </tr>
+            <tr>
+              <td><span class="env-key">GITHUB_REPOSITORY</span></td>
+              <td><span class="env-req optional">opcional</span></td>
+              <td class="env-desc">Solo necesaria para publicar imágenes Docker en GHCR. GitHub Actions la rellena automáticamente en CI.
+                <span class="env-example">GITHUB_REPOSITORY=tu-usuario/TFM</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout callout-warn" style="margin-top:16px;">
+        <div class="callout-title">Importante — DATABASE_URL en local vs Docker</div>
+        Si usas <strong>Docker</strong> (Opción A), el backend accede a la base de datos usando el hostname <code>db</code> (nombre del servicio en Docker Compose): <code>postgresql://serubix:password@<strong>db</strong>:5432/serubix</code><br>
+        Si levantas el backend <strong>sin Docker</strong> (Opción B), usa <code>localhost</code>: <code>postgresql://serubix:password@<strong>localhost</strong>:5432/serubix</code>
+      </div>
+    </section>
+
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- 4. CLONAR                                        -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="clonar">
+      <h2>
+        <span class="section-icon" style="background:rgba(59,130,246,.15); color:#3b82f6;">↓</span>
+        Clonar el repositorio
+      </h2>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>git clone https://github.com/tu-usuario/TFM.git
+cd TFM</code></pre>
+      </div>
+
+      <p style="margin-top:12px;">Una vez clonado, crea el fichero <code>.env</code> como se explica en la sección anterior antes de continuar.</p>
+    </section>
+
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- 5. OPCIÓN A — DOCKER                            -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="docker">
+      <h2>
+        <span class="section-icon" style="background:rgba(59,130,246,.15); color:#3b82f6;">🐳</span>
+        Opción A — Con Docker <span style="font-size:12px; font-weight:400; color:var(--green); background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.3); padding:2px 8px; border-radius:4px; margin-left:8px;">Recomendada</span>
+      </h2>
+
+      <p>Esta es la opción más sencilla. Docker Compose levanta automáticamente la base de datos, el backend, el frontend y el nginx reverse proxy. No necesitas instalar PostgreSQL ni configurar nada adicional.</p>
+
+      <div class="callout callout-info" style="margin-top:16px;">
+        <div class="callout-title">Prerequisito</div>
+        Docker Desktop debe estar <strong>ejecutándose</strong> antes de continuar. Puedes verificarlo con <code>docker info</code>.
+      </div>
+
+      <div class="steps" style="margin-top:24px;">
+
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-body">
+            <div class="step-title">Crear el fichero .env</div>
+            <div class="step-desc">Si aún no lo has hecho, copia la plantilla y rellena los valores según la sección anterior.</div>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-label">Terminal — raíz del proyecto</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+              </div>
+              <pre><code>cp .env.example .env
+<span class="tok-comment"># Edita .env con tu editor favorito y rellena los valores</span></code></pre>
+            </div>
+            <div class="callout callout-warn" style="margin-top:8px;">
+              <div class="callout-title">⚠ Ajusta DATABASE_URL</div>
+              Para Docker, asegúrate de que <code>DATABASE_URL</code> use el hostname <code>db</code> (no <code>localhost</code>):<br>
+              <code>DATABASE_URL=postgresql://serubix:password@db:5432/serubix</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-body">
+            <div class="step-title">Construir y levantar los contenedores</div>
+            <div class="step-desc">La primera vez tarda unos minutos porque construye las imágenes. Las siguientes veces es inmediato.</div>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-label">Terminal — raíz del proyecto</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+              </div>
+              <pre><code>docker compose up -d --build</code></pre>
+            </div>
+            <div class="step-desc" style="margin-top:8px;">Esto levanta 4 contenedores: <code>db</code> (PostgreSQL), <code>backend</code> (API), <code>frontend</code> (Next.js) y <code>nginx</code> (reverse proxy).</div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-body">
+            <div class="step-title">Ejecutar las migraciones de base de datos</div>
+            <div class="step-desc">Las migraciones crean todas las tablas necesarias en PostgreSQL. Solo es necesario hacerlo la primera vez (o cuando haya nuevas migraciones).</div>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-label">Terminal</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+              </div>
+              <pre><code>docker compose exec backend npx prisma migrate deploy</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-body">
+            <div class="step-title">Poblar la base de datos con los datos iniciales</div>
+            <div class="step-desc">El seed crea los planes <strong>Free</strong> (5.000 caracteres TTS/mes) y <strong>Pro</strong> (ilimitado). Sin esto, el registro de usuarios fallará.</div>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-label">Terminal</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+              </div>
+              <pre><code>docker compose exec backend npm run db:seed</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">5</div>
+          <div class="step-body">
+            <div class="step-title">Verificar que todo está en marcha</div>
+            <div class="step-desc">Comprueba el estado de los contenedores:</div>
+            <div class="code-block">
+              <div class="code-header">
+                <span class="code-label">Terminal</span>
+                <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+              </div>
+              <pre><code>docker compose ps</code></pre>
+            </div>
+            <div class="step-desc" style="margin-top:8px;">Todos los contenedores deben aparecer con estado <code>Up</code>. Abre <a href="http://localhost" target="_blank">http://localhost</a> en el navegador.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <h3>Comandos de gestión Docker</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Gestión de contenedores</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>docker compose up -d          <span class="tok-comment"># Levantar (sin reconstruir)</span>
+docker compose down           <span class="tok-comment"># Parar y eliminar contenedores</span>
+docker compose down -v        <span class="tok-comment"># Parar + borrar volúmenes (⚠ borra la BD y audios)</span>
+docker compose logs -f        <span class="tok-comment"># Ver logs de todos los servicios</span>
+docker compose logs -f backend <span class="tok-comment"># Ver logs solo del backend</span>
+docker compose restart backend <span class="tok-comment"># Reiniciar un servicio</span></code></pre>
+      </div>
+    </section>
+
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- 6. OPCIÓN B — SIN DOCKER                        -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="manual">
+      <h2>
+        <span class="section-icon" style="background:rgba(234,179,8,.15); color:#eab308;">⚡</span>
+        Opción B — Sin Docker (desarrollo manual)
+      </h2>
+
+      <p>Útil si prefieres mayor control sobre cada proceso o no tienes Docker instalado. Necesitarás PostgreSQL corriendo localmente.</p>
+
+      <h3>Paso 1 — Instalar dependencias</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="tok-comment"># Instalar dependencias del backend</span>
+cd Backend
+npm install
+
+<span class="tok-comment"># Instalar dependencias del frontend</span>
+cd ../FrontEnd
+npm install</code></pre>
+      </div>
+
+      <h3>Paso 2 — Configurar PostgreSQL</h3>
+      <p>Asegúrate de tener PostgreSQL 16 corriendo en tu máquina. Crea la base de datos y el usuario:</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">psql — como superusuario</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>CREATE USER serubix WITH PASSWORD 'mi_password';
+CREATE DATABASE serubix OWNER serubix;
+GRANT ALL PRIVILEGES ON DATABASE serubix TO serubix;</code></pre>
+      </div>
+
+      <div class="callout callout-warn" style="margin-top:8px;">
+        <div class="callout-title">Ajusta DATABASE_URL</div>
+        En el fichero <code>.env</code>, usa <code>localhost</code> en lugar de <code>db</code>:<br>
+        <code>DATABASE_URL=postgresql://serubix:mi_password@localhost:5432/serubix</code><br>
+        Y también: <code>NEXT_PUBLIC_API_URL=http://localhost:4000</code>
+      </div>
+
+      <h3>Paso 3 — Migraciones y seed</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal — carpeta Backend/</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>cd Backend
+npm run db:migrate   <span class="tok-comment"># Crea las tablas en la BD</span>
+npm run db:seed      <span class="tok-comment"># Inserta los planes Free y Pro</span></code></pre>
+      </div>
+
+      <h3>Paso 4 — Levantar backend y frontend</h3>
+      <p>Necesitarás <strong>dos terminales</strong> abiertas simultáneamente:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal 1 — Backend (puerto 4000)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>cd Backend
+npm run dev</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal 2 — Frontend (puerto 3000)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>cd FrontEnd
+npm run dev</code></pre>
+      </div>
+
+      <p style="margin-top:12px;">Con esta opción <strong>no hay nginx</strong>. Accede directamente a <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> (frontend) y <a href="http://localhost:4000" target="_blank">http://localhost:4000</a> (API).</p>
+    </section>
+
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- 7. URLS DEL PROYECTO                            -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="urls">
+      <h2>
+        <span class="section-icon" style="background:rgba(34,197,94,.15); color:#22c55e;">🌐</span>
+        URLs del proyecto
+      </h2>
+
+      <h3>Con Docker (Opción A)</h3>
+      <div class="url-list">
+        <div class="url-item">
+          <span class="url-dot" style="background:#22c55e"></span>
+          <span class="url-service" style="color:#86efac">Landing</span>
+          <span class="url-addr"><a href="http://localhost" target="_blank">http://localhost</a></span>
+          <span class="url-desc">Página principal pública</span>
+        </div>
+        <div class="url-item">
+          <span class="url-dot" style="background:#3b82f6"></span>
+          <span class="url-service" style="color:#93c5fd">Dashboard</span>
+          <span class="url-addr"><a href="http://localhost/dashboard" target="_blank">http://localhost/dashboard</a></span>
+          <span class="url-desc">Área privada (requiere login)</span>
+        </div>
+        <div class="url-item">
+          <span class="url-dot" style="background:#a855f7"></span>
+          <span class="url-service" style="color:#d8b4fe">API</span>
+          <span class="url-addr"><a href="http://localhost/api" target="_blank">http://localhost/api</a></span>
+          <span class="url-desc">Backend (via nginx proxy)</span>
+        </div>
+        <div class="url-item">
+          <span class="url-dot" style="background:#eab308"></span>
+          <span class="url-service" style="color:#fde68a">Health</span>
+          <span class="url-addr"><a href="http://localhost/api/health" target="_blank">http://localhost/api/health</a></span>
+          <span class="url-desc">Estado del backend</span>
+        </div>
+      </div>
+
+      <h3>Sin Docker (Opción B)</h3>
+      <div class="url-list">
+        <div class="url-item">
+          <span class="url-dot" style="background:#22c55e"></span>
+          <span class="url-service" style="color:#86efac">Frontend</span>
+          <span class="url-addr"><a href="http://localhost:3000" target="_blank">http://localhost:3000</a></span>
+          <span class="url-desc">Next.js dev server</span>
+        </div>
+        <div class="url-item">
+          <span class="url-dot" style="background:#3b82f6"></span>
+          <span class="url-service" style="color:#93c5fd">Backend API</span>
+          <span class="url-addr"><a href="http://localhost:4000" target="_blank">http://localhost:4000</a></span>
+          <span class="url-desc">Express server</span>
+        </div>
+        <div class="url-item">
+          <span class="url-dot" style="background:#eab308"></span>
+          <span class="url-service" style="color:#fde68a">Health</span>
+          <span class="url-addr"><a href="http://localhost:4000/health" target="_blank">http://localhost:4000/health</a></span>
+          <span class="url-desc">Estado del backend</span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- 8. COMANDOS ÚTILES                              -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="comandos">
+      <h2>
+        <span class="section-icon" style="background:rgba(234,179,8,.15); color:#eab308;">$</span>
+        Comandos útiles
+      </h2>
+
+      <h3>Frontend</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">FrontEnd/</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>npm run dev            <span class="tok-comment"># Servidor de desarrollo con hot-reload</span>
+npm run build          <span class="tok-comment"># Compilar para producción</span>
+npm run test           <span class="tok-comment"># Ejecutar todos los tests (>295)</span>
+npm run test:watch     <span class="tok-comment"># Tests en modo watch</span>
+npm run test:coverage  <span class="tok-comment"># Informe de cobertura (>99%)</span></code></pre>
+      </div>
+
+      <h3>Backend</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Backend/</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code>npm run dev            <span class="tok-comment"># Servidor con auto-restart (ts-node-dev)</span>
+npm run build          <span class="tok-comment"># Compilar TypeScript → dist/</span>
+npm run test           <span class="tok-comment"># Ejecutar todos los tests (>90)</span>
+npm run test:coverage  <span class="tok-comment"># Informe de cobertura (>99%)</span>
+npm run db:migrate     <span class="tok-comment"># Aplicar migraciones de Prisma</span>
+npm run db:seed        <span class="tok-comment"># Poblar con datos iniciales (planes)</span>
+npm run db:studio      <span class="tok-comment"># Abrir Prisma Studio (explorador visual de BD)</span>
+npm run db:reset       <span class="tok-comment"># ⚠ Borrar BD y volver a migrar</span></code></pre>
+      </div>
+
+      <h3>Base de datos (via Docker)</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-label">Terminal — raíz del proyecto</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+        </div>
+        <pre><code><span class="tok-comment"># Conectar a psql dentro del contenedor</span>
+docker compose exec db psql -U serubix -d serubix
+
+<span class="tok-comment"># Ver logs de la base de datos</span>
+docker compose logs db
+
+<span class="tok-comment"># Abrir Prisma Studio (interfaz web para explorar la BD)</span>
+docker compose exec backend npm run db:studio
+<span class="tok-comment"># → disponible en http://localhost:5555</span></code></pre>
+      </div>
+    </section>
+
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- 9. SOLUCIÓN DE PROBLEMAS                        -->
+    <!-- ─────────────────────────────────────────────── -->
+    <section id="problemas">
+      <h2>
+        <span class="section-icon" style="background:rgba(239,68,68,.15); color:#ef4444;">✕</span>
+        Solución de problemas comunes
+      </h2>
+
+      <div class="problem">
+        <div class="problem-title">🔴 El contenedor backend falla al arrancar con error de BD</div>
+        <div class="problem-desc">El backend arranca antes de que PostgreSQL esté listo. Docker Compose lo gestiona con un healthcheck, pero en ocasiones es necesario esperar o reiniciar el backend:</div>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><code>docker compose restart backend</code></pre>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">🔴 Error "relation does not exist" o tablas no encontradas</div>
+        <div class="problem-desc">Las migraciones de Prisma no se han aplicado todavía. Ejecuta:</div>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><code>docker compose exec backend npx prisma migrate deploy
+docker compose exec backend npm run db:seed</code></pre>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">🔴 El registro de usuario falla con error de plan</div>
+        <div class="problem-desc">Los planes <strong>Free</strong> y <strong>Pro</strong> no existen en la base de datos. El seed no se ha ejecutado:</div>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><code>docker compose exec backend npm run db:seed</code></pre>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">🔴 El frontend no puede conectar con la API (errores de red)</div>
+        <div class="problem-desc">Comprueba que <code>NEXT_PUBLIC_API_URL</code> en <code>.env</code> apunta a la URL correcta según la opción que estás usando:</div>
+        <ul>
+          <li>Con Docker + nginx: <code>NEXT_PUBLIC_API_URL=http://localhost/api</code></li>
+          <li>Sin Docker: <code>NEXT_PUBLIC_API_URL=http://localhost:4000</code></li>
+        </ul>
+        <div class="callout callout-warn" style="margin-top:8px;">
+          <div class="callout-title">Reconstruir tras cambiar .env</div>
+          Las variables <code>NEXT_PUBLIC_*</code> se incrustan en el build de Next.js. Si cambias <code>NEXT_PUBLIC_API_URL</code> debes reconstruir el frontend: <code>docker compose up -d --build frontend</code>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">🔴 Login con Google no funciona</div>
+        <div class="problem-desc">Verifica que en Google Cloud Console, la <strong>URI de redirección autorizada</strong> incluye exactamente:</div>
+        <ul>
+          <li><code>http://localhost:3000/api/auth/callback/google</code> (sin Docker)</li>
+          <li><code>http://localhost/api/auth/callback/google</code> (con Docker + nginx)</li>
+        </ul>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">🔴 El TTS devuelve error 503</div>
+        <div class="problem-desc">La variable <code>OPENAI_API_KEY</code> no está configurada en <code>.env</code> o no tiene créditos. Añade una clave válida y reinicia el backend:</div>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><code>docker compose restart backend</code></pre>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">🔴 Puerto 80 o 3000 ya en uso</div>
+        <div class="problem-desc">Otro proceso está ocupando el puerto. Identifícalo y ciérralo:</div>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">macOS / Linux</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><code>lsof -i :80    <span class="tok-comment"># Qué proceso usa el puerto 80</span>
+lsof -i :3000  <span class="tok-comment"># Qué proceso usa el puerto 3000</span>
+lsof -i :4000  <span class="tok-comment"># Qué proceso usa el puerto 4000</span></code></pre>
+        </div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">🔴 Contenedores con estado "Exited" o "Restarting"</div>
+        <div class="problem-desc">Revisa los logs del contenedor que falla para ver el error concreto:</div>
+        <div class="code-block">
+          <div class="code-header"><span class="code-label">Terminal</span><button class="copy-btn" onclick="copyCode(this)">Copiar</button></div>
+          <pre><code>docker compose logs --tail=50 backend
+docker compose logs --tail=50 frontend
+docker compose logs --tail=50 db</code></pre>
+        </div>
+      </div>
+
+      <div class="callout callout-success" style="margin-top:24px;">
+        <div class="callout-title">¿Todo en marcha?</div>
+        Si la landing carga en <a href="http://localhost" target="_blank">http://localhost</a>, el registro de usuarios funciona y el endpoint <a href="http://localhost/api/health" target="_blank">http://localhost/api/health</a> devuelve <code>{"status":"ok"}</code>, el proyecto está correctamente configurado.
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    const text = pre.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '¡Copiado!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  // Highlight active nav link on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>
