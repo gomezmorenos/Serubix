@@ -17,6 +17,7 @@ export default defineConfig({
         'src/lib/auth.ts',
         'src/middleware.ts',
         'src/app/api/**',
+        'src/components/Providers.tsx',
       ],
     },
   },
