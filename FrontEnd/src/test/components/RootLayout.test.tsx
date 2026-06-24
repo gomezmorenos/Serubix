@@ -14,6 +14,10 @@ vi.mock('@/components/landing/CookieBanner', () => ({
   CookieBanner: () => null,
 }))
 
+vi.mock('@/components/ChatWidget', () => ({
+  ChatWidget: () => null,
+}))
+
 import RootLayout from '@/app/layout'
 
 describe('RootLayout', () => {
