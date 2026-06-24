@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Providers } from '@/components/Providers'
 import { CookieBanner } from '@/components/landing/CookieBanner'
+import { ChatWidget } from '@/components/ChatWidget'
 import './globals.css'
 
 const geistSans = Geist({
@@ -48,13 +49,14 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
           {children}
           <CookieBanner />
+          <ChatWidget />
         </Providers>
       </body>
     </html>

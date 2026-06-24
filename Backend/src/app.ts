@@ -5,6 +5,7 @@ import { authRoutes } from './routes/auth.routes'
 import { usersRoutes } from './routes/users.routes'
 import { plansRoutes } from './routes/plans.routes'
 import { toolsRoutes } from './routes/tools.routes'
+import { chatRoutes } from './routes/chat.routes'
 import { errorMiddleware } from './middleware/error.middleware'
 
 export const app = express()
@@ -26,5 +27,6 @@ app.use('/auth', authRoutes)
 app.use('/users', usersRoutes)
 app.use('/plans', plansRoutes)
 app.use('/tools', toolsRoutes)
+app.use('/chat', chatRoutes)
 
 app.use(errorMiddleware)
