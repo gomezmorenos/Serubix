@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { authHeaders } from '@/lib/api'
 
 interface ProfileFormProps {
   name: string | null | undefined
@@ -22,10 +23,7 @@ export function ProfileForm({ name, email }: Readonly<ProfileFormProps>) {
       if (apiUrl && session?.backendToken) {
         const res = await fetch(`${apiUrl}/users/me`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.backendToken}`,
-          },
+          headers: authHeaders(session.backendToken),
           body: JSON.stringify({ name: displayName }),
         })
         if (!res.ok) throw new Error('Error al guardar el perfil')

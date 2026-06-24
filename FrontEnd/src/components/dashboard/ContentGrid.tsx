@@ -1,16 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-
-interface ContentItem {
-  id: string
-  tool: string
-  label: string
-  status: 'pending' | 'done' | 'error'
-  filename: string | null
-  createdAt: string
-}
+import { useContentItems } from '@/hooks/useContentItems'
+import { authHeaders } from '@/lib/api'
+import type { ContentItem } from '@/types/content'
 
 const TOOL_NAMES: Record<string, string> = {
   tts: 'Text to Speech',
@@ -30,39 +24,8 @@ function timeAgo(dateStr: string): string {
 
 export function ContentGrid() {
   const { data: session } = useSession()
-  const [items, setItems] = useState<ContentItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const { items, loading } = useContentItems()
   const [downloading, setDownloading] = useState<string | null>(null)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const fetchContent = useCallback(async () => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL
-    if (!apiUrl || !session?.backendToken) return
-    try {
-      const res = await fetch(`${apiUrl}/tools/content`, {
-        headers: { Authorization: `Bearer ${session.backendToken}` },
-      })
-      if (res.ok) setItems(await res.json())
-    } finally {
-      setLoading(false)
-    }
-  }, [session?.backendToken])
-
-  // Polling: cada 3 s mientras haya elementos en pending
-  useEffect(() => {
-    fetchContent()
-  }, [fetchContent])
-
-  useEffect(() => {
-    const hasPending = items.some((i) => i.status === 'pending')
-    if (intervalRef.current) clearInterval(intervalRef.current)
-    if (hasPending) {
-      intervalRef.current = setInterval(fetchContent, 3000)
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [items, fetchContent])
 
   async function handleDownload(item: ContentItem) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL
@@ -70,7 +33,7 @@ export function ContentGrid() {
     setDownloading(item.id)
     try {
       const res = await fetch(`${apiUrl}/tools/content/${item.id}/download`, {
-        headers: { Authorization: `Bearer ${session.backendToken}` },
+        headers: authHeaders(session.backendToken),
       })
       if (!res.ok) return
       const blob = await res.blob()
@@ -160,7 +123,7 @@ export function ContentGrid() {
   )
 }
 
-function Spinner({ size = 16, className = 'text-blue-400' }: { size?: number; className?: string }) {
+function Spinner({ size = 16, className = 'text-blue-400' }: Readonly<{ size?: number; className?: string }>) {
   return (
     <svg className={`animate-spin ${className}`} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path d="M21 12a9 9 0 1 1-6.219-8.56" />
@@ -197,7 +160,7 @@ function EmptyIcon() {
   )
 }
 
-function ToolIcon({ tool }: { tool: string }) {
+function ToolIcon({ tool }: Readonly<{ tool: string }>) {
   if (tool === 'tts') {
     return (
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

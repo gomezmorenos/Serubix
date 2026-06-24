@@ -3,15 +3,11 @@ import { promises as fs } from 'node:fs'
 import OpenAI from 'openai'
 import { prisma } from '../lib/prisma'
 import { AppError } from '../lib/errors'
+import { currentMonth } from '../lib/date'
 import { contentService } from './content.service'
 import type { TtsInput } from '../schemas/tools.schema'
 
 export const STORAGE_DIR = path.join(process.cwd(), 'storage')
-
-function currentMonth(): number {
-  const d = new Date()
-  return d.getFullYear() * 100 + (d.getMonth() + 1)
-}
 
 async function checkPlanLimit(userId: string, textLength: number) {
   const user = await prisma.user.findUnique({

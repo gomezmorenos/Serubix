@@ -1,15 +1,12 @@
-import { Router, Request, Response, NextFunction } from 'express'
+import { Router } from 'express'
+import { asyncHandler } from '../lib/async-handler'
 import { plansService } from '../services/plans.service'
 
 const router = Router()
 
-router.get('/', async (_req: Request, res: Response, next: NextFunction) => {
-  try {
-    const plans = await plansService.getAll()
-    res.json(plans)
-  } catch (err) {
-    next(err)
-  }
-})
+router.get('/', asyncHandler(async (_req, res) => {
+  const plans = await plansService.getAll()
+  res.json(plans)
+}))
 
 export { router as plansRoutes }

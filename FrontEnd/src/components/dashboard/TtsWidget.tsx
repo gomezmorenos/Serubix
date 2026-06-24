@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
 import Link from 'next/link'
+import { useTtsGenerate } from '@/hooks/useTtsGenerate'
 
 const VOICES = [
   { value: 'alloy', label: 'Alloy (neutro)' },
@@ -13,58 +13,24 @@ const VOICES = [
   { value: 'shimmer', label: 'Shimmer (suave)' },
 ]
 
-type Status = 'idle' | 'generating' | 'queued' | 'error'
-
 export function TtsWidget() {
-  const { data: session } = useSession()
+  const { status, error, generate, isReady } = useTtsGenerate()
   const [text, setText] = useState('')
   const [voice, setVoice] = useState('alloy')
-  const [status, setStatus] = useState<Status>('idle')
-  const [error, setError] = useState('')
 
   async function handleGenerate() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL
     if (!text.trim()) return
-
-    setStatus('generating')
-    setError('')
-
-    try {
-      let res: Response
-      try {
-        res = await fetch(`${apiUrl}/tools/tts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.backendToken}`,
-          },
-          body: JSON.stringify({ text: text.trim(), voice }),
-        })
-      } catch {
-        throw new Error('No se puede conectar con el servidor.')
-      }
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        if (res.status === 402) throw new Error(data.error)
-        throw new Error(data.error ?? 'Error al generar el audio.')
-      }
-
-      setStatus('queued')
-      setText('')
-    } catch (err) {
-      setStatus('error')
-      setError(err instanceof Error ? err.message : 'Error al generar el audio.')
-    }
+    const success = await generate(text.trim(), voice)
+    if (success) setText('')
   }
 
-  const isDisabled = !text.trim() || status === 'generating' || !session?.backendToken
+  const isDisabled = !text.trim() || status === 'generating' || !isReady
 
   return (
     <div className="space-y-4">
       <div>
         <label htmlFor="tts-text" className="block text-sm font-medium text-zinc-300 mb-1.5">
-          Texto a convertir
+          Texto a convertir{' '}
           <span className="ml-2 text-zinc-500 font-normal">({text.length}/4096)</span>
         </label>
         <textarea
@@ -72,7 +38,7 @@ export function TtsWidget() {
           rows={4}
           maxLength={4096}
           value={text}
-          onChange={(e) => { setText(e.target.value); setStatus('idle'); setError('') }}
+          onChange={(e) => { setText(e.target.value); }}
           placeholder="Escribe o pega aquí el texto que quieres convertir a voz..."
           className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-sm"
         />

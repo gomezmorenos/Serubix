@@ -1,11 +1,7 @@
 import { prisma } from '../lib/prisma'
 import { AppError } from '../lib/errors'
+import { currentMonth } from '../lib/date'
 import type { UpdateProfileInput } from '../schemas/users.schema'
-
-function currentMonth(): number {
-  const d = new Date()
-  return d.getFullYear() * 100 + (d.getMonth() + 1)
-}
 
 export const usersService = {
   async getProfile(userId: string) {
