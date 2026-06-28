@@ -86,10 +86,13 @@ router.get(
     }
 
     const session = await chatService.findSession({ userId, sessionKey })
-    if (!session) return res.json([])
+    if (!session) {
+      res.json([])
+      return
+    }
 
     const messages = await chatService.getHistory(session.id, 50)
-    res.json(messages.map((m) => ({ role: m.role, content: m.content, createdAt: m.createdAt })))
+    res.json(messages.map((m: { role: string; content: string; createdAt: Date }) => ({ role: m.role, content: m.content, createdAt: m.createdAt })))
   }),
 )
 
