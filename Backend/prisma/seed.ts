@@ -11,8 +11,8 @@ async function main() {
 
   await prisma.plan.upsert({
     where: { id: 'pro' },
-    update: {},
-    create: { id: 'pro', name: 'Pro', ttsLimit: 0 },
+    update: { ttsLimit: 50000 },
+    create: { id: 'pro', name: 'Pro', ttsLimit: 50000 },
   })
 
   console.log('Seed completado: planes Free y Pro creados')

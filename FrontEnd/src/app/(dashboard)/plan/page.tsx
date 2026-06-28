@@ -26,12 +26,12 @@ const PLANS = [
   {
     id: 'pro',
     name: 'Pro',
-    price: '29€',
+    price: '9,99€',
     period: 'mes',
     current: false,
     features: [
       'Todas las herramientas SaaS',
-      'Uso ilimitado',
+      'Hasta 50.000 caracteres de TTS al mes',
       'YouTube Shorts y Text to Image',
       'Soporte prioritario',
       'Automatizaciones a medida incluidas',

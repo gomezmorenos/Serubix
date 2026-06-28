@@ -16,7 +16,7 @@ describe('GET /plans', () => {
   it('devuelve la lista de planes', async () => {
     const plans = [
       { id: 'free', name: 'Free', ttsLimit: 5000 },
-      { id: 'pro', name: 'Pro', ttsLimit: 0 },
+      { id: 'pro', name: 'Pro', ttsLimit: 50000 },
     ]
     mockGetAll.mockResolvedValue(plans)
 

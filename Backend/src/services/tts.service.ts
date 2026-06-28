@@ -25,7 +25,7 @@ async function checkPlanLimit(userId: string, textLength: number) {
     const used = agg._sum.amount ?? 0
     if (used + textLength > ttsLimit) {
       throw new AppError(
-        `Límite mensual del plan ${user.planId} alcanzado (${ttsLimit} caracteres). Actualiza a Pro para uso ilimitado.`,
+        `Límite mensual del plan ${user.planId} alcanzado (${ttsLimit} caracteres). Actualiza tu plan para aumentar el límite.`,
         402,
       )
     }

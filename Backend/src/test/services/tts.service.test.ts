@@ -29,7 +29,7 @@ vi.mock('node:fs', () => ({
 }))
 
 const freePlan = { ttsLimit: 5000 }
-const proPlan = { ttsLimit: 0 }
+const proPlan = { ttsLimit: 50000 }
 
 describe('ttsService.startGeneration', () => {
   beforeEach(() => {
@@ -80,17 +80,27 @@ describe('ttsService.startGeneration', () => {
     expect(id).toBe('content-1')
   })
 
-  it('no consulta el agregado de uso para plan Pro (ttsLimit = 0)', async () => {
+  it('el plan Pro consulta el agregado y permite generar dentro del límite de 50.000', async () => {
     mockUserFindUnique.mockResolvedValue({ planId: 'pro', plan: proPlan })
+    mockUsageAggregate.mockResolvedValue({ _sum: { amount: 0 } })
     mockContentCreate.mockResolvedValue({ id: 'content-2' })
 
     await ttsService.startGeneration('u1', { text: 'texto largo', voice: 'nova' })
 
-    expect(mockUsageAggregate).not.toHaveBeenCalled()
+    expect(mockUsageAggregate).toHaveBeenCalled()
+  })
+
+  it('lanza AppError 402 si el plan Pro supera 50.000 caracteres', async () => {
+    mockUserFindUnique.mockResolvedValue({ planId: 'pro', plan: proPlan })
+    mockUsageAggregate.mockResolvedValue({ _sum: { amount: 49990 } })
+
+    await expect(ttsService.startGeneration('u1', { text: 'a'.repeat(20), voice: 'nova' }))
+      .rejects.toMatchObject({ statusCode: 402 })
   })
 
   it('trunca el label a 60 caracteres si el texto es largo', async () => {
     mockUserFindUnique.mockResolvedValue({ planId: 'pro', plan: proPlan })
+    mockUsageAggregate.mockResolvedValue({ _sum: { amount: 0 } })
     mockContentCreate.mockResolvedValue({ id: 'content-3' })
     const longText = 'a'.repeat(100)
 

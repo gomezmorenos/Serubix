@@ -23,9 +23,9 @@ describe('PlanPage', () => {
     expect(screen.getByText('0€')).toBeInTheDocument()
   })
 
-  it('el plan Pro tiene precio 29€', () => {
+  it('el plan Pro tiene precio 9,99€', () => {
     render(<PlanPage />)
-    expect(screen.getByText('29€')).toBeInTheDocument()
+    expect(screen.getByText('9,99€')).toBeInTheDocument()
   })
 
   it('el botón del plan Free está deshabilitado', () => {

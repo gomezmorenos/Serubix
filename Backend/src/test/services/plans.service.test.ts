@@ -13,7 +13,7 @@ vi.mock('../../lib/prisma', () => ({
 
 const fakePlans = [
   { id: 'free', name: 'Free', ttsLimit: 5000 },
-  { id: 'pro', name: 'Pro', ttsLimit: 0 },
+  { id: 'pro', name: 'Pro', ttsLimit: 50000 },
 ]
 
 describe('plansService.getAll', () => {
