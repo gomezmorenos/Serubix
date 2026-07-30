@@ -160,3 +160,109 @@ jobs:
           sleep 3
           curl -sf http://localhost:4000/health | grep '"status":"ok"'
           kill %1
+
+  # ── E2E ─────────────────────────────────────────────────────
+  e2e:
+    name: E2E — Playwright
+    runs-on: ubuntu-latest
+    needs: [build-frontend, test-backend-integration]
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: serubix
+          POSTGRES_PASSWORD: ${{ secrets.CI_DB_PASSWORD || 'ci_test_password' }}
+          POSTGRES_DB: serubix_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U serubix"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://serubix:${{ secrets.CI_DB_PASSWORD || 'ci_test_password' }}@localhost:5432/serubix_e2e
+      JWT_SECRET: ${{ secrets.CI_JWT_SECRET || 'ci-jwt-secret-for-e2e-tests' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            Backend/package-lock.json
+            FrontEnd/package-lock.json
+
+      # ── Backend ──────────────────────────────────────────────
+      - name: Backend — instalar dependencias
+        run: npm ci
+        working-directory: Backend
+
+      - name: Backend — generar Prisma Client
+        run: npx prisma generate
+        working-directory: Backend
+
+      - name: Backend — migraciones y seed
+        run: npx prisma migrate deploy && npm run db:seed
+        working-directory: Backend
+
+      - name: Backend — build
+        run: npm run build
+        working-directory: Backend
+
+      - name: Backend — arranque en segundo plano
+        run: node dist/index.js &
+        working-directory: Backend
+        env:
+          PORT: 4000
+          OPENAI_API_KEY: ''
+          FRONTEND_URL: http://localhost:3000
+
+      # ── Frontend ─────────────────────────────────────────────
+      - name: Frontend — instalar dependencias
+        run: npm ci
+        working-directory: FrontEnd
+
+      - name: Frontend — build
+        run: npm run build
+        working-directory: FrontEnd
+        env:
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci-auth-secret-exactly-32-chars!!' }}
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+
+      - name: Frontend — arranque en segundo plano
+        run: npm start &
+        working-directory: FrontEnd
+        env:
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci-auth-secret-exactly-32-chars!!' }}
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+          PORT: 3000
+
+      # ── Playwright ───────────────────────────────────────────
+      - name: Esperar servicios
+        run: npx wait-on http://localhost:4000/health http://localhost:3000 -t 60000
+
+      - name: Instalar navegadores Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: FrontEnd
+
+      - name: Ejecutar tests E2E
+        run: npm run test:e2e
+        working-directory: FrontEnd
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_API_URL: http://localhost:4000
+
+      - name: Subir reporte en caso de fallo
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: FrontEnd/playwright-report/
+          retention-days: 7
