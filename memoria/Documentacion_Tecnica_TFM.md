@@ -300,7 +300,9 @@ Auth.js gestiona toda la complejidad de la autenticación en el servidor: sesion
 
 **Estrategia de sesión:** `jwt` (stateless). El token se firma con `AUTH_SECRET` y viaja en una cookie `httpOnly`. No se necesita base de datos para las sesiones del frontend.
 
-**Integración con el backend:** el `authorize` del proveedor `Credentials` llama a `POST /auth/login` del backend. Si recibe `{user, token}` exitoso, Auth.js crea una sesión y almacena el token JWT del backend dentro. Así, los Client Components pueden obtener el `backendToken` de la sesión para llamar directamente a la API.
+**Integración con el backend:** el `authorize` del proveedor `Credentials` llama a `POST /auth/login` del backend usando `AUTH_API_URL` (variable server-side) para que funcione tanto dentro de Docker como en CI. Si recibe `{user, token}` exitoso, Auth.js crea una sesión y almacena el `backendToken` dentro del JWT de Auth.js.
+
+**`trustHost: true`:** Auth.js v5 en modo producción fuerza cookies `__Secure-` (solo HTTPS). La app siempre corre en HTTP internamente — en producción detrás de nginx, en CI directamente. Sin `trustHost: true`, el middleware no puede leer la sesión y entra en bucle redirigiendo a `/login`. Esta opción le dice a Auth.js que confíe en el `Host` header tal cual, sin forzar HTTPS.
 
 **Fallback de desarrollo:** si el backend no está disponible (arranque sin Docker), el `authorize` captura el error de red y crea un usuario mock, permitiendo continuar el desarrollo del frontend de forma independiente.
 
@@ -706,6 +708,7 @@ Push/PR a main con cambios en FrontEnd/ o Backend/
 - **Jobs paralelos:** `test-frontend` y `check-backend` corren en paralelo.
 - **`needs`:** `build-frontend` espera a `test-frontend`; `test-backend-integration` espera a `check-backend`; `e2e` espera a ambos.
 - **OpenAI en E2E:** `OPENAI_API_KEY` se pasa vacío — `page.route()` intercepta las llamadas a nivel de red antes de que lleguen al backend.
+- **`NEXTAUTH_URL` en E2E:** se establece a `http://localhost:3000` para que Auth.js construya los callbacks correctamente en CI. Sin ella, combinada con `trustHost: true`, el middleware entraba en bucle de redirecciones.
 
 ### 8.2 Pipeline de despliegue (`deploy.yml`)
 
@@ -749,7 +752,7 @@ Todos los secretos tienen fallback en el workflow para que los forks públicos p
 
 | Entorno | Compose | Env | Imágenes |
 |---|---|---|---|
-| Desarrollo local (Docker) | `docker-compose.yml` | `.env` (raíz) | Build desde fuente |
+| Desarrollo local (Docker) | `docker-compose.dev.yml` | `.env` (raíz) | Build desde fuente (hot-reload) |
 | Desarrollo local (directo) | — | `Backend/.env` + `FrontEnd/.env.local` | — |
 | Tests integración | `docker-compose.ci.yml` | `env.ci` | Build stage `builder` |
 | Producción VPS | `docker-compose.prod.yml` | `.env` (en VPS) | Imágenes GHCR |
@@ -775,6 +778,7 @@ OPENAI_API_KEY=sk-proj-...
 
 # Frontend (Auth.js)
 AUTH_SECRET=<generado con openssl rand -base64 32>
+NEXTAUTH_URL=https://serubix.com
 # AUTH_GOOGLE_ID=...
 # AUTH_GOOGLE_SECRET=...
 ```
@@ -1467,7 +1471,7 @@ USER backend   # ← el proceso Node.js nunca tiene permisos de root
 
 #### Cookies httpOnly — sesión inaccesible desde JavaScript
 
-Auth.js almacena la sesión en una cookie `httpOnly`, `secure` y con `SameSite=lax`. JavaScript del navegador no puede leerla, lo que elimina el vector de ataque XSS más común.
+Auth.js almacena la sesión en una cookie `httpOnly` con `SameSite=lax`. JavaScript del navegador no puede leerla, lo que elimina el vector de ataque XSS más común. La opción `trustHost: true` en la config permite que la cookie funcione en entornos HTTP (detrás de proxy o en CI) sin degradar la seguridad, ya que el proxy (nginx) se encarga de TLS en producción.
 
 ---
 

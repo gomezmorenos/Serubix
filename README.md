@@ -349,6 +349,7 @@ cp .env.example .env
 | `OPENAI_API_KEY` | Clave de OpenAI para TTS y chat |
 | `NEXT_PUBLIC_API_URL` | URL de la API visible en el navegador (client-side) |
 | `AUTH_API_URL` | URL interna del backend para llamadas server-side (ej: `http://backend:4000` en Docker) |
+| `NEXTAUTH_URL` | URL canónica del frontend — necesaria en CI y producción para que Auth.js construya callbacks correctamente |
 | `GITHUB_REPOSITORY` | `usuario/repo` para GHCR (CI lo rellena automáticamente) |
 
 ---
