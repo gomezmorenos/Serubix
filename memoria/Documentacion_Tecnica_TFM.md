@@ -43,7 +43,8 @@ El proyecto resuelve un problema concreto: las pequeñas empresas y autónomos d
 | Landing page | Completado | 10 secciones, SEO, accesibilidad WCAG |
 | Área de clientes | Completado | Login/registro, dashboard con 4 páginas |
 | Backend API | Completado | 8 endpoints REST, JWT, PostgreSQL, TTS |
-| CI/CD | Completado | 4 jobs: tests FE, build FE, check BE, integración BE+DB |
+| Chatbot IA | Completado | SSE streaming, GPT-4o-mini, historial de sesión |
+| CI/CD | Completado | 5 jobs: tests FE, build FE, check BE, integración BE+DB, E2E Playwright |
 | Infraestructura | Completado | Docker multi-stage, Nginx, compose para dev/prod/CI |
 
 El proyecto demuestra competencias en arquitectura software fullstack, integración de IA, DevOps y seguridad aplicada.
@@ -263,7 +264,11 @@ Backend/src/
 | `PATCH` | `/users/me` | JWT | Actualiza nombre |
 | `GET` | `/users/me/usage` | JWT | Uso del mes actual por herramienta |
 | `GET` | `/plans` | No | Lista de planes disponibles |
-| `POST` | `/tools/tts` | JWT | Genera audio MP3 via OpenAI TTS |
+| `POST` | `/tools/tts` | JWT | Genera audio MP3 via OpenAI TTS (async, 202) |
+| `GET` | `/tools/content` | JWT | Lista contenido generado (últimos 7 días) |
+| `GET` | `/tools/content/:id/download` | JWT | Descarga el archivo de audio |
+| `POST` | `/chat/message` | Opcional | Streaming SSE con GPT-4o-mini |
+| `GET` | `/chat/history` | Opcional | Historial de mensajes de la sesión |
 
 ---
 
@@ -534,27 +539,27 @@ npm run dev                           # http://localhost:4000
 
 ## 7. Calidad del código y testing
 
-### 7.1 Métricas de testing (FrontEnd)
+### 7.1 Métricas de testing (FrontEnd — Vitest)
 
 | Métrica | Valor |
 |---|---|
-| Ficheros de test | 26 |
-| Tests totales | 244 |
-| Tests pasando | 244 (100%) |
-| Cobertura statements | 99,89% |
-| Cobertura branches | ~95% |
+| Ficheros de test | 32 |
+| Tests totales | 310 |
+| Tests pasando | 310 (100%) |
+| Cobertura statements | >99% |
+| Cobertura branches | >95% |
 | Cobertura functions | 100% |
-| Tiempo de ejecución | ~3.7s |
+| Tiempo de ejecución | ~4.5s |
 
-### 7.2 Distribución de tests por tipo
+### 7.2 Distribución de tests por tipo (Vitest)
 
 | Tipo | Ficheros | Tests | Qué valida |
 |---|---|---|---|
 | **Unitarios** | 1 | 36 | Integridad del content (textos, URLs, arrays) |
-| **Componentes** | 24 | 190 | Render, accesibilidad, estados, interacciones |
-| **Integración** | 1 | 18 | Página completa, marca, navegación |
+| **Componentes** | 28 | 246 | Render, accesibilidad, estados, interacciones |
+| **Integración** | 3 | 28 | Rutas completas, chatbot service, chat routes SSE |
 
-### 7.3 Componentes nuevos con tests completos
+### 7.3 Componentes y servicios con tests completos
 
 **Área de autenticación:**
 - `LoginForm` (8 tests): render campos, llama `signIn('credentials')`, redirige al `callbackUrl`, muestra error 'CredentialsSignin', deshabilita botón en carga
@@ -572,6 +577,10 @@ npm run dev                           # http://localhost:4000
 - `PlanPage` (10 tests): dos planes, barra de progreso, botón Pro
 - `HerramientasPage` (9 tests): widget TTS, badges de estado
 - `DashboardLayout` (3 tests): render con sesión, redirección sin sesión
+
+**Chatbot (Backend — cobertura 100%):**
+- `chat.service.test.ts` (16 tests): `getOrCreateSession`, `appendMessage`, `getHistory`, `buildSystemPrompt` — Prisma mockeado con `vi.hoisted()`
+- `chat.routes.test.ts` (15 tests): SSE streaming con async generator mock, `optionalAuth`, historial, casos de error (sin API key, sesión inválida)
 
 ### 7.4 Técnicas de mocking aplicadas
 
@@ -601,15 +610,46 @@ exclude: [
 ]
 ```
 
-### 7.5 Backend — verificación de tipos y build
+### 7.5 Backend — tests y verificación
 
-El backend no tiene tests unitarios en esta fase (el tiempo se priorizó en la implementación), pero tiene dos niveles de verificación automatizados en CI:
+El backend cuenta con **122 tests** (Vitest + Supertest) organizados en tres niveles:
 
-1. **`npx tsc --noEmit`** — verificación estática de tipos TypeScript. Sin Prisma client generado esto fallaría, por lo que el job de CI ejecuta `npx prisma generate` previamente.
+1. **Tests unitarios de servicios** (con Prisma mockeado vía `vi.hoisted()`): `auth.service`, `users.service`, `tts.service`, `chat.service` — verifican la lógica de negocio de forma aislada.
 
-2. **Smoke test de integración** con PostgreSQL real: el job `test-backend-integration` levanta una instancia de PostgreSQL en GitHub Actions, ejecuta las migraciones, el seed, arranca el servidor y verifica que `GET /health` devuelve `{"status":"ok"}`.
+2. **Tests de integración de rutas** (con Supertest): todas las rutas REST más las rutas del chatbot con SSE streaming mockeado.
 
-### 7.6 Ejemplo de bug detectado por los tests
+3. **Smoke test en CI** con PostgreSQL real: el job `test-backend-integration` levanta una instancia de PostgreSQL en GitHub Actions, ejecuta migraciones, seed, arranca el servidor y verifica `GET /health`.
+
+**`npx tsc --noEmit`** — el job de CI ejecuta también la verificación estática de tipos, con `npx prisma generate` previo para que el Prisma Client esté disponible.
+
+### 7.6 Tests E2E — Playwright
+
+Los tests E2E verifican el comportamiento de la aplicación completa (frontend + backend + base de datos) tal como lo experimentaría un usuario real.
+
+**16 tests en 4 proyectos:**
+
+| Proyecto Playwright | Tests | Cubre |
+|---|---|---|
+| `setup` | 1 | Crea usuario E2E via API + login UI + guarda `storageState` |
+| `auth-flow` | 6 | Registro, login correcto/incorrecto, contraseñas, rutas protegidas |
+| `dashboard` | 4 | TTS widget autenticado, botón habilitado/deshabilitado, "En cola" |
+| `chat` | 5 | ChatWidget flotante, SSE streaming mockeado, Enter key, cerrar |
+
+**Decisiones de diseño:**
+- **`storageState`:** el proyecto `setup` guarda las cookies de sesión en `e2e/.auth/user.json`. Los tests del dashboard reutilizan esta sesión sin rehacer el login.
+- **Mock de red con `page.route()`:** las llamadas a OpenAI se interceptan en el navegador, por lo que los tests no necesitan `OPENAI_API_KEY` real.
+- **`AUTH_API_URL`:** en Docker, el `authorize` de NextAuth usa `http://backend:4000` (interno) en lugar de `http://localhost:4000` para que la autenticación server-side llegue al backend correctamente. Esto evita el fallback dev que dejaba `backendToken: null`.
+
+**Ejecutar E2E localmente:**
+```bash
+# Requisito: Docker stack arriba
+docker compose -f docker-compose.dev.yml up -d
+
+cd FrontEnd
+E2E_BASE_URL=http://localhost:3000 E2E_API_URL=http://localhost:4000 npm run test:e2e
+```
+
+### 7.7 Ejemplo de bug detectado por los tests
 
 Durante el desarrollo se detectó un bug real en `FinalCTASection.tsx`: el email de contacto estaba hardcodeado como `hola@automatizaia.com` (dominio anterior al rebrand a Serubix). El test:
 
@@ -626,7 +666,7 @@ it('el email del CTA pertenece al dominio serubix.com', () => {
 
 ## 8. CI/CD y DevOps
 
-### 8.1 Pipeline de CI (`ci.yml`) — 4 jobs
+### 8.1 Pipeline de CI (`ci.yml`) — 5 jobs
 
 ```
 Push/PR a main con cambios en FrontEnd/ o Backend/
@@ -637,24 +677,35 @@ Push/PR a main con cambios en FrontEnd/ o Backend/
  │test-frontend│        │check-backend  │
  │             │        │               │
  │ tsc --noEmit│        │prisma generate│
- │ 244 tests   │        │tsc --noEmit   │
+ │ 310 tests   │        │tsc --noEmit   │
  └──────┬──────┘        │npm run build  │
         │               └───────┬───────┘
  ┌──────▼──────┐        ┌───────▼───────────────┐
- │build-frontend        │test-backend-integration│
+ │build-frontend│       │test-backend-integration│
  │             │        │                        │
  │ next build  │        │ PostgreSQL service      │
  │ standalone  │        │ prisma migrate deploy   │
- └─────────────┘        │ npm run db:seed         │
-                        │ smoke test /health       │
-                        └────────────────────────┘
+ └──────┬──────┘        │ npm run db:seed         │
+        │               │ 122 tests Vitest        │
+        │               └───────┬────────────────┘
+        └───────────┬───────────┘
+             ┌──────▼──────────────┐
+             │        e2e          │
+             │                     │
+             │ PostgreSQL service   │
+             │ backend compilado    │
+             │ frontend next build  │
+             │ wait-on (health+:3000)│
+             │ 16 tests Playwright  │
+             └─────────────────────┘
 ```
 
 **Optimizaciones:**
 - **Filtro `paths`:** cambios solo en `memoria/` no disparan CI.
 - **Caché npm:** `cache-dependency-path` apunta al `package-lock.json` de cada subdirectorio.
 - **Jobs paralelos:** `test-frontend` y `check-backend` corren en paralelo.
-- **`needs`:** `build-frontend` espera a `test-frontend`; `test-backend-integration` espera a `check-backend`.
+- **`needs`:** `build-frontend` espera a `test-frontend`; `test-backend-integration` espera a `check-backend`; `e2e` espera a ambos.
+- **OpenAI en E2E:** `OPENAI_API_KEY` se pasa vacío — `page.route()` intercepta las llamadas a nivel de red antes de que lleguen al backend.
 
 ### 8.2 Pipeline de despliegue (`deploy.yml`)
 
@@ -1541,13 +1592,15 @@ La política documenta las 4 cookies técnicas en uso (`authjs.session-token`, `
 
 | Métrica | Valor |
 |---|---|
-| Componentes React | 17 (10 landing + 3 auth + 4 dashboard) |
+| Componentes React | 18 (10 landing + 3 auth + 4 dashboard + ChatWidget) |
 | Páginas implementadas | 6 (landing, login, register, dashboard, perfil, plan, herramientas) |
-| Líneas de código (src/) | ~2.500 |
-| Ficheros TypeScript | 35+ |
-| Tests totales | 244 |
-| Cobertura statements | 99,89% |
-| Tiempo de tests | ~3.7s |
+| Líneas de código (src/) | ~2.800 |
+| Ficheros TypeScript | 38+ |
+| Tests Vitest (unitarios/componentes) | 310 |
+| Tests E2E Playwright | 16 |
+| Tests totales | 326 |
+| Cobertura statements | >99% |
+| Tiempo de tests Vitest | ~4.5s |
 | Tiempo de build | ~5s |
 | Tamaño First Load JS | 103 kB (landing) |
 
@@ -1555,20 +1608,21 @@ La política documenta las 4 cookies técnicas en uso (`authjs.session-token`, `
 
 | Métrica | Valor |
 |---|---|
-| Endpoints REST | 8 |
-| Modelos Prisma | 3 (User, Plan, Usage) |
-| Ficheros TypeScript | 20 |
-| Líneas de código (src/) | ~450 |
+| Endpoints REST | 13 (incluyendo chat y content) |
+| Modelos Prisma | 4 (User, Plan, Usage, GeneratedContent + ChatSession + ChatMessage) |
+| Ficheros TypeScript | 25 |
+| Líneas de código (src/) | ~650 |
+| Tests Vitest | 122 |
 | Compilación TypeScript | Limpia (0 errores) |
 
 ### 13.3 DevOps
 
 | Métrica | Valor |
 |---|---|
-| Jobs en CI | 4 |
+| Jobs en CI | 5 (test-frontend, build-frontend, check-backend, test-backend-integration, e2e) |
 | Workflows configurados | 2 (ci.yml + deploy.yml) |
 | Ficheros docker-compose | 3 (dev, prod, ci) |
-| Tiempo de pipeline CI (estimado) | ~3-4 min |
+| Tiempo de pipeline CI (estimado) | ~5-6 min |
 
 ### 13.4 Calidad de código (Next.js Build)
 
@@ -1596,10 +1650,10 @@ Route (app)                        Size    First Load JS
 | Arquitectura fullstack | Frontend + Backend + DB con separación clara de capas |
 | Desarrollo frontend avanzado | Next.js 15 App Router, Server/Client Components, route groups |
 | Autenticación profesional | Auth.js v5, Google OAuth, JWT, bcrypt, middleware de protección |
-| API REST | 8 endpoints, JWT, Zod validation, error handling centralizado |
+| API REST | 13 endpoints, JWT, Zod validation, SSE streaming, error handling centralizado |
 | ORM y modelado de datos | Prisma, migraciones versionadas, relaciones, índices |
-| Integración de IA | OpenAI TTS, control de límites de uso por plan, rate limiting por mes |
-| Testing avanzado | 244 tests, 3 niveles, `vi.hoisted()`, mocks de sesión y fetch |
+| Integración de IA | OpenAI TTS + GPT-4o-mini chatbot, control de límites de uso por plan |
+| Testing avanzado | 448 tests (310 Vitest FE + 122 Vitest BE + 16 E2E Playwright), SSE mocks, storageState |
 | DevOps | Docker multi-stage, 3 compose files, CI con integración DB real |
 | Seguridad | bcrypt, JWT, CORS, Helmet, doble protección de rutas, no root |
 | Accesibilidad | WCAG 2.1, ARIA, roles semánticos, `aria-current` |
@@ -1628,15 +1682,12 @@ Esto lo diferencia de la mayoría de TFMs y demuestra capacidad de llevar un pro
 - [x] Área privada de clientes con 4 páginas de dashboard
 - [x] Backend REST API con Express + TypeScript + Prisma
 - [x] Integración OpenAI TTS con control de límites de plan
-- [x] Suite de tests completa (244 tests, ~100% cobertura)
-- [x] CI/CD con GitHub Actions (4 jobs, tests de integración con DB real)
+- [x] Chatbot con SSE streaming vía GPT-4o-mini (landing page + área privada)
+- [x] Suite de tests completa (448 tests: 310 Vitest FE + 122 Vitest BE + 16 E2E Playwright)
+- [x] CI/CD con GitHub Actions (5 jobs, tests de integración con DB real + E2E Playwright)
 - [x] Infraestructura Docker para desarrollo, CI y producción
 
 ### Próximas fases
-
-**Fase siguiente — Conectar TTS en el dashboard**
-- El widget TTS en `/herramientas` necesita llamar a `POST /tools/tts` y reproducir el audio MP3 devuelto
-- Reproductor de audio en el navegador con la Web Audio API o `<audio>`
 
 **Integración Google OAuth con backend**
 - Al autenticarse con Google, crear/actualizar el usuario en la DB del backend

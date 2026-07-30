@@ -42,6 +42,7 @@ TFM/
 | CI/CD | GitHub Actions, GHCR |
 | Testing (FE) | Vitest, React Testing Library |
 | Testing (BE) | Vitest, Supertest |
+| Testing (E2E) | Playwright |
 
 ---
 
@@ -60,11 +61,16 @@ Disponible en `http://localhost:3000`
 ### Comandos disponibles
 
 ```bash
-npm run dev           # Servidor de desarrollo
-npm run build         # Build de producción
-npm run test          # Ejecutar tests
-npm run test:watch    # Tests en modo watch
-npm run test:coverage # Cobertura — >99% código fuente
+npm run dev              # Servidor de desarrollo
+npm run build            # Build de producción
+npm run test             # Ejecutar tests unitarios/componentes
+npm run test:watch       # Tests en modo watch
+npm run test:coverage    # Cobertura — >99% código fuente
+
+# Tests E2E (requiere Docker stack corriendo)
+E2E_BASE_URL=http://localhost:3000 E2E_API_URL=http://localhost:4000 npm run test:e2e
+E2E_BASE_URL=http://localhost:3000 E2E_API_URL=http://localhost:4000 npm run test:e2e:ui
+npm run test:e2e:report  # Ver el último informe HTML
 ```
 
 ### Estructura de componentes
@@ -214,7 +220,7 @@ cd FrontEnd && npm run test:coverage
 
 | Métrica | Resultado |
 |---|---|
-| Tests | >295 pasando |
+| Tests | 310 pasando |
 | Statements | >99% |
 | Branches | >99% |
 | Functions | >99% |
@@ -245,11 +251,30 @@ cd Backend && npm run test:coverage
 
 | Métrica | Resultado |
 |---|---|
-| Tests | >90 pasando |
+| Tests | 122 pasando |
 | Statements | >99% |
 | Branches | >98% |
 | Functions | >99% |
 | Lines | >99% |
+
+### Tests E2E — Playwright
+
+```bash
+# Requisito: Docker stack arriba
+docker compose -f docker-compose.dev.yml up -d
+
+cd FrontEnd
+E2E_BASE_URL=http://localhost:3000 E2E_API_URL=http://localhost:4000 npm run test:e2e
+```
+
+| Proyecto | Tests | Cubre |
+|---|---|---|
+| `setup` | 1 | Crea usuario E2E, guarda sesión en disco |
+| `auth-flow` | 6 | Registro, login, contraseñas, rutas protegidas |
+| `dashboard` | 4 | Widget TTS autenticado, estados del botón |
+| `chat` | 5 | ChatWidget flotante, SSE mock, Enter key |
+
+Los tests E2E usan `page.route()` de Playwright para interceptar las llamadas a OpenAI/TTS, por lo que no se necesita `OPENAI_API_KEY` real.
 
 ---
 
@@ -267,10 +292,10 @@ Los audios se persisten en `tts_storage` para que no se pierdan al reiniciar o a
 ### Desarrollo local con Docker
 
 ```bash
-docker compose up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
-Levanta: db (PostgreSQL), backend (4000), frontend (3000) y nginx (80).
+Levanta: db (PostgreSQL), backend (4000), frontend (3000). En dev no hay nginx — acceso directo a los puertos.
 
 ### Producción
 
@@ -321,8 +346,9 @@ cp .env.example .env
 | `JWT_SECRET` | Secreto para tokens JWT del backend |
 | `AUTH_SECRET` | Secreto de Auth.js (mín. 32 bytes) |
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | Credenciales OAuth de Google |
-| `OPENAI_API_KEY` | Clave de OpenAI para TTS |
-| `NEXT_PUBLIC_API_URL` | URL de la API visible en el navegador |
+| `OPENAI_API_KEY` | Clave de OpenAI para TTS y chat |
+| `NEXT_PUBLIC_API_URL` | URL de la API visible en el navegador (client-side) |
+| `AUTH_API_URL` | URL interna del backend para llamadas server-side (ej: `http://backend:4000` en Docker) |
 | `GITHUB_REPOSITORY` | `usuario/repo` para GHCR (CI lo rellena automáticamente) |
 
 ---
