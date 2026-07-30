@@ -235,6 +235,7 @@ jobs:
         env:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci-auth-secret-exactly-32-chars!!' }}
           NEXT_PUBLIC_API_URL: http://localhost:4000
+          NEXTAUTH_URL: http://localhost:3000
 
       - name: Frontend — arranque en segundo plano
         run: npm start &
@@ -242,6 +243,7 @@ jobs:
         env:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci-auth-secret-exactly-32-chars!!' }}
           NEXT_PUBLIC_API_URL: http://localhost:4000
+          NEXTAUTH_URL: http://localhost:3000
           PORT: 3000
 
       # ── Playwright ───────────────────────────────────────────
