@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma'
 import { AppError } from '../lib/errors'
 import { currentMonth } from '../lib/date'
 import { contentService } from './content.service'
+import { logger } from '../lib/logger'
 import type { TtsInput } from '../schemas/tools.schema'
 
 export const STORAGE_DIR = path.join(process.cwd(), 'storage')
@@ -65,7 +66,7 @@ export const ttsService = {
 
     // Fire-and-forget: no se espera para poder responder 202 inmediatamente
     generateAndStore(userId, content.id, input).catch(async (err) => {
-      console.error('[TTS]', err.message)
+      logger.error({ err, contentId: content.id }, 'Error en generación TTS')
       await contentService.markError(content.id).catch(() => null)
     })
 

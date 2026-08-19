@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { AppError } from '../lib/errors'
+import { logger } from '../lib/logger'
 
 export function errorMiddleware(
   err: Error,
@@ -12,6 +13,6 @@ export function errorMiddleware(
     return
   }
 
-  console.error('[Error]', err.message)
+  logger.error({ err }, 'Error interno no controlado')
   res.status(500).json({ error: 'Error interno del servidor' })
 }

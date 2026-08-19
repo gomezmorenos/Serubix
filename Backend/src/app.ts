@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+import pinoHttp from 'pino-http'
+import { logger } from './lib/logger'
 import { authRoutes } from './routes/auth.routes'
 import { usersRoutes } from './routes/users.routes'
 import { plansRoutes } from './routes/plans.routes'
@@ -10,6 +12,11 @@ import { errorMiddleware } from './middleware/error.middleware'
 
 export const app = express()
 
+app.use(pinoHttp({
+  logger,
+  // No loguear /health para no ensuciar los logs
+  autoLogging: { ignore: (req) => req.url === '/health' },
+}))
 app.use(helmet())
 app.use(
   cors({

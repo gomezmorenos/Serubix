@@ -1,7 +1,8 @@
 import { app } from './app'
+import { logger } from './lib/logger'
 
 const PORT = process.env.PORT ?? 4000
 
 app.listen(PORT, () => {
-  console.log(`Serubix API corriendo en http://localhost:${PORT}`)
+  logger.info({ port: PORT }, 'Serubix API arrancada')
 })
