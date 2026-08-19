@@ -14,7 +14,7 @@ services:
       retries: 10
     restart: unless-stopped
     networks:
-      - serubix
+      - proxy
 
   backend:
     image: ghcr.io/${GHCR_REPO}/serubix-backend:latest
@@ -33,7 +33,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     networks:
-      - serubix
+      - proxy
 
   frontend:
     image: ghcr.io/${GHCR_REPO}/serubix-frontend:latest
@@ -47,11 +47,11 @@ services:
       - backend
     restart: unless-stopped
     networks:
-      - serubix
+      - proxy
 
 networks:
-  serubix:
-    driver: bridge
+  proxy:
+    external: true
 
 volumes:
   postgres_data:

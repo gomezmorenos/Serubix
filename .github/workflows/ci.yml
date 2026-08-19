@@ -7,12 +7,16 @@ on:
       - 'FrontEnd/**'
       - 'Backend/**'
       - '.github/workflows/ci.yml'
+      - 'docker-compose.prod.yml'
+      - 'nginx/**'
   pull_request:
     branches: [main]
     paths:
       - 'FrontEnd/**'
       - 'Backend/**'
       - '.github/workflows/ci.yml'
+      - 'docker-compose.prod.yml'
+      - 'nginx/**'
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
