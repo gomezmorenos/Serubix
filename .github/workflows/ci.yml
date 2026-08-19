@@ -334,7 +334,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key:      ${{ secrets.VPS_SSH_KEY }}
           source: "docker-compose.prod.yml,nginx/"
-          target: "/opt/serubix"
+          target: "/home/deploy/serubix"
           strip_components: 0
 
       - name: Desplegar en VPS
@@ -360,10 +360,10 @@ jobs:
             GH_TOKEN,GH_ACTOR
           script: |
             set -e
-            mkdir -p /opt/serubix
+            mkdir -p /home/deploy/serubix
 
             # Regenerar .env desde secrets (nunca toca el repo)
-            cat > /opt/serubix/.env <<EOF
+            cat > /home/deploy/serubix/.env <<EOF
             DOMAIN=${DOMAIN}
             GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
             POSTGRES_USER=serubix
@@ -381,7 +381,7 @@ jobs:
             # Login en GHCR desde el VPS (usa token temporal del workflow)
             echo "${GH_TOKEN}" | docker login ghcr.io -u "${GH_ACTOR}" --password-stdin
 
-            cd /opt/serubix
+            cd /home/deploy/serubix
 
             # Pull imágenes nuevas y reiniciar
             docker compose -f docker-compose.prod.yml pull
