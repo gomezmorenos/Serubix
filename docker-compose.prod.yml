@@ -18,8 +18,8 @@ services:
 
   backend:
     image: ghcr.io/${GHCR_REPO}/serubix-backend:latest
-    expose:
-      - "4000"
+    ports:
+      - "4000:4000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${POSTGRES_USER:-serubix}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-serubix}
@@ -37,28 +37,13 @@ services:
 
   frontend:
     image: ghcr.io/${GHCR_REPO}/serubix-frontend:latest
-    expose:
-      - "3000"
+    ports:
+      - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=https://${DOMAIN}/api
     env_file:
       - .env
     depends_on:
-      - backend
-    restart: unless-stopped
-    networks:
-      - serubix
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-    depends_on:
-      - frontend
       - backend
     restart: unless-stopped
     networks:
