@@ -17,7 +17,7 @@ services:
       - serubix
 
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY}/serubix-backend:latest
+    image: ghcr.io/${GHCR_REPO}/serubix-backend:latest
     expose:
       - "4000"
     environment:
@@ -36,7 +36,7 @@ services:
       - serubix
 
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY}/serubix-frontend:latest
+    image: ghcr.io/${GHCR_REPO}/serubix-frontend:latest
     expose:
       - "3000"
     environment:

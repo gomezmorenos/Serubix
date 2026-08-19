@@ -348,7 +348,7 @@ jobs:
         uses: appleboy/ssh-action@v1.2.0
         env:
           DOMAIN:             ${{ secrets.PROD_DOMAIN }}
-          GITHUB_REPOSITORY:  ${{ steps.repo.outputs.name }}
+          GHCR_REPO:          ${{ steps.repo.outputs.name }}
           POSTGRES_PASSWORD:  ${{ secrets.PROD_POSTGRES_PASSWORD }}
           JWT_SECRET:         ${{ secrets.PROD_JWT_SECRET }}
           AUTH_SECRET:        ${{ secrets.PROD_AUTH_SECRET }}
@@ -362,7 +362,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key:      ${{ secrets.VPS_SSH_KEY }}
           envs: >
-            DOMAIN,GITHUB_REPOSITORY,POSTGRES_PASSWORD,JWT_SECRET,
+            DOMAIN,GHCR_REPO,POSTGRES_PASSWORD,JWT_SECRET,
             AUTH_SECRET,OPENAI_API_KEY,AUTH_GOOGLE_ID,AUTH_GOOGLE_SECRET,
             GH_TOKEN,GH_ACTOR
           script: |
@@ -372,7 +372,7 @@ jobs:
             # Regenerar .env desde secrets (nunca toca el repo)
             cat > /home/deploy/serubix/.env <<EOF
             DOMAIN=${DOMAIN}
-            GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
+            GHCR_REPO=${GHCR_REPO}
             POSTGRES_USER=serubix
             POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
             POSTGRES_DB=serubix
