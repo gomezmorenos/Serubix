@@ -12,7 +12,16 @@ import { errorMiddleware } from './middleware/error.middleware'
 
 export const app = express()
 
-const httpLogger = pinoHttp({ logger })
+const httpLogger = pinoHttp({
+  logger,
+  customLogLevel: (_req, res, err) => {
+    if (err || res.statusCode >= 500) return 'error'
+    if (res.statusCode >= 400) return 'warn'
+    return 'info'
+  },
+  customSuccessMessage: (req, res) => `${req.method} ${req.url} ${res.statusCode}`,
+  customErrorMessage: (req, res) => `${req.method} ${req.url} ${res.statusCode}`,
+})
 
 // Excluir /health y el endpoint SSE del chat para no interferir con streaming
 app.use((req, res, next) => {
