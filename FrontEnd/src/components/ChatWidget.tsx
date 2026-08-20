@@ -158,8 +158,10 @@ export function ChatWidget() {
           }
         }
       }
-    } catch {
-      setError('No se pudo enviar el mensaje. Comprueba tu conexión.')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('[ChatWidget] Error enviando mensaje:', msg)
+      setError(`No se pudo enviar el mensaje. (${msg})`)
       setMessages((prev) => prev.filter((m) => m.id !== assistantMsgId))
     } finally {
       setIsStreaming(false)
