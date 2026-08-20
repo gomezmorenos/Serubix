@@ -12,11 +12,13 @@ import { errorMiddleware } from './middleware/error.middleware'
 
 export const app = express()
 
-app.use(pinoHttp({
-  logger,
-  // No loguear /health para no ensuciar los logs
-  autoLogging: { ignore: (req) => req.url === '/health' },
-}))
+const httpLogger = pinoHttp({ logger })
+
+// Excluir /health y el endpoint SSE del chat para no interferir con streaming
+app.use((req, res, next) => {
+  if (req.path === '/health' || req.path === '/chat/message') return next()
+  httpLogger(req, res, next)
+})
 app.use(helmet())
 app.use(
   cors({
