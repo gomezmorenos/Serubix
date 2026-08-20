@@ -8,6 +8,8 @@ import { usersRoutes } from './routes/users.routes'
 import { plansRoutes } from './routes/plans.routes'
 import { toolsRoutes } from './routes/tools.routes'
 import { chatRoutes } from './routes/chat.routes'
+import { tokensRoutes } from './routes/tokens.routes'
+import { creditsRoutes } from './routes/credits.routes'
 import { errorMiddleware } from './middleware/error.middleware'
 
 export const app = express()
@@ -45,6 +47,8 @@ app.use('/auth', authRoutes)
 app.use('/users', usersRoutes)
 app.use('/plans', plansRoutes)
 app.use('/tools', toolsRoutes)
+app.use('/tokens', tokensRoutes)
+app.use('/credits', creditsRoutes)
 app.use('/chat', chatRoutes)
 
 app.use(errorMiddleware)

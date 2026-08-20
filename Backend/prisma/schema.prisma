@@ -19,6 +19,8 @@ model User {
   usages           Usage[]
   generatedContent GeneratedContent[]
   chatSessions     ChatSession[]
+  tokens           Token[]
+  creditGrants     CreditGrant[]
   createdAt        DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -59,6 +61,33 @@ model GeneratedContent {
 
   @@index([userId, createdAt])
   @@map("generated_content")
+}
+
+model CreditGrant {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Int
+  reason    String?
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("credit_grants")
+}
+
+model Token {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  tokenHash  String    @unique
+  prefix     String
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+  @@map("tokens")
 }
 
 model ChatSession {
