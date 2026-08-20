@@ -400,7 +400,7 @@ jobs:
 
             # Migraciones sin downtime (Prisma es idempotente)
             docker compose -f docker-compose.prod.yml exec -T backend \
-              npx prisma migrate deploy || true
+              npx prisma migrate deploy
 
             # Limpiar imágenes antiguas
             docker image prune -f
