@@ -402,7 +402,7 @@ jobs:
             docker compose -f docker-compose.prod.yml exec -T --user root backend \
               npx prisma migrate deploy
             docker compose -f docker-compose.prod.yml exec -T --user root backend \
-              node_modules/.bin/ts-node prisma/seed.ts
+              node prisma/seed.js
 
             # Limpiar imágenes antiguas
             docker image prune -f
