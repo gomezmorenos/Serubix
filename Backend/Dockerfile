@@ -13,9 +13,9 @@ ENV NODE_ENV=production
 RUN apk add --no-cache openssl && \
     addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 backend
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder --chown=backend:nodejs /app/dist ./dist
+COPY --from=builder --chown=backend:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=backend:nodejs /app/prisma ./prisma
 USER backend
 EXPOSE 4000
 CMD ["node", "dist/index.js"]
