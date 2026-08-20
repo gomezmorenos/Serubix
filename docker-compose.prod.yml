@@ -50,7 +50,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=https://${DOMAIN}/api
+      - NEXT_PUBLIC_API_URL=https://${DOMAIN}/backend
+      - AUTH_API_URL=http://backend:4000
     env_file:
       - .env
     depends_on:

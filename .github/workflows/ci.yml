@@ -335,7 +335,7 @@ jobs:
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           build-args: |
-            NEXT_PUBLIC_API_URL=https://${{ secrets.PROD_DOMAIN }}/api
+            NEXT_PUBLIC_API_URL=https://${{ secrets.PROD_DOMAIN }}/backend
 
       # ── Despliegue en VPS ────────────────────────────────────
       - name: Copiar archivos de configuración al VPS
