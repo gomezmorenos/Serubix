@@ -398,9 +398,11 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
 
-            # Migraciones sin downtime (Prisma es idempotente)
+            # Migraciones y seed (ambos son idempotentes)
             docker compose -f docker-compose.prod.yml exec -T --user root backend \
               npx prisma migrate deploy
+            docker compose -f docker-compose.prod.yml exec -T --user root backend \
+              npm run db:seed
 
             # Limpiar imágenes antiguas
             docker image prune -f
